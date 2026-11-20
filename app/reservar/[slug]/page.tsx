@@ -39,6 +39,10 @@ export default function BookingPage(){
  },[params.slug]);
 
  useEffect(()=>{void loadAvailability()},[loadAvailability]);
+ useEffect(()=>{
+  const timer=window.setInterval(()=>void loadAvailability(),10000);
+  return()=>window.clearInterval(timer);
+ },[loadAvailability]);
  const hours=publicData?.hours.find(h=>h.weekday===new Date(`${date}T12:00:00`).getDay());
  const slots=useMemo(()=>{
   if(!service||!hours?.enabled||!publicData)return[];
