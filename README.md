@@ -1,53 +1,36 @@
 # AgendaFlow — Microapp de agenda
 
-AgendaFlow tiene un objetivo: **organizar las reservas de un emprendimiento sin complicaciones**.
+AgendaFlow organiza las reservas de un emprendimiento sin complicaciones.
 
-## Qué trae esta versión
-- Agenda con vista diaria y semanal.
+## Funciones
+- Agenda diaria y semanal.
 - Crear, editar, confirmar, completar y cancelar reservas.
-- Servicios con precio, duración y opción de pausar disponibilidad.
-- Horarios semanales de atención.
-- Bloqueos de horarios por fecha (almuerzo, trámites, descanso, etc.).
-- Página pública para solicitar una hora desde `/reservar/[slug]`.
-- Validación de cruces de reservas y bloqueos en la experiencia local.
-- Contacto y recordatorio manual por WhatsApp mediante enlace `wa.me`.
-- Datos básicos del cliente guardados con su reserva.
-- Diseño adaptable para computador y teléfono, con estética marfil, grafito y bronce.
+- Servicios con precio y duración.
+- Horarios semanales y bloqueos.
+- Enlace público para solicitar una hora.
+- Contacto manual por WhatsApp.
+- Registro e inicio de sesión con Supabase Auth.
+- Selección de rubro al registrarse.
+- Demos de barbería, estética y servicios técnicos con datos ficticios y de solo lectura.
 
-## Importante sobre esta entrega
-Esta versión funciona como **prototipo local** y guarda los datos en el almacenamiento del navegador (`localStorage`). Sirve para probar la experiencia y las funciones en el mismo navegador/dispositivo. No sincroniza todavía reservas entre dispositivos ni publica datos en internet. Para operar con clientes reales desde distintos teléfonos o computadores, el siguiente paso es conectar Supabase (autenticación, persistencia y RPC pública). La migración SQL incluida prepara las tablas y la función transaccional para crear reservas públicas; la interfaz todavía no está conectada a esa base de datos.
+## Estado de esta entrega
+El registro y login se conectan a Supabase Auth; la migración 0002 crea un perfil de negocio con su rubro. La agenda original todavía funciona con localStorage. Por eso, las reservas, servicios, horarios y clientes aún no se sincronizan entre dispositivos. La demo es ilustrativa y no crea reservas.
 
-La reserva pública usa el mismo almacenamiento local de la demo, por lo que para probarla en esta etapa debe abrirse desde el mismo navegador donde está el panel.
-
-## Tecnologías
-- Next.js App Router + React + TypeScript
-- Tailwind CSS v4
-- Supabase SSR / PostgreSQL (cliente y esquema preparados para la siguiente etapa)
-- Lucide React
-
-## Requisitos e instalación
-- Node.js 20.9+ (recomendado Node 22 LTS)
-- npm
-
-```bash
-npm install
-cp .env.example .env.local
-npm run dev
-```
-Abre http://localhost:3000.
+## Configuración
+1. Crea un proyecto Supabase.
+2. Configura `.env.local` con `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+3. Ejecuta las migraciones `0001_agendaflow_schema.sql` y `0002_business_sector_signup.sql` en orden desde Supabase SQL Editor.
+4. En Authentication > URL Configuration configura la URL local y la de producción.
+5. Ejecuta `npm install` y `npm run dev`.
 
 ## Rutas
-- `/` — presentación de AgendaFlow.
-- `/dashboard` — agenda diaria y semanal.
-- `/dashboard/servicios` — servicios, duración y precio.
-- `/dashboard/horarios` — jornada semanal, bloqueos y datos del negocio.
-- `/dashboard/clientes` — datos básicos e historial de reservas por cliente.
-- `/reservar/estudio-central` — formulario público de prueba (slug configurable desde datos del negocio en el siguiente paso).
+- `/` landing.
+- `/demo` ejemplos de solo lectura.
+- `/registro` alta de cuenta con rubro.
+- `/login` inicio de sesión.
+- `/dashboard` agenda.
+- `/dashboard/servicios`, `/dashboard/horarios`, `/dashboard/clientes`.
+- `/reservar/[slug]` formulario público de demostración local.
 
-## Próximo paso técnico
-1. Crear el proyecto Supabase y configurar las variables de entorno.
-2. Aplicar `supabase/migrations/0001_agendaflow_schema.sql`.
-3. Conectar autenticación sencilla del dueño y persistencia de agenda.
-4. Conectar el formulario público a `create_public_appointment` y consultar disponibilidad desde la base de datos.
-
-No publiques esta versión como servicio real hasta completar la conexión con Supabase y las pruebas de seguridad. No expongas claves `service_role` en el navegador.
+## Antes de ofrecerlo como servicio
+Completar la conexión de todas las operaciones de agenda a Supabase, probar RLS con dos cuentas distintas y verificar reservas públicas desde otro dispositivo. No exponer claves `service_role` en el navegador.
