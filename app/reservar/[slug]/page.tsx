@@ -38,7 +38,7 @@ export default function BookingPage(){
   setLoading(false);
  },[params.slug]);
 
- useEffect(()=>{void loadAvailability()},[loadAvailability]);
+ useEffect(()=>{\n  const timer=window.setTimeout(()=>{void loadAvailability()},0);\n  return()=>window.clearTimeout(timer);\n },[loadAvailability]);
  useEffect(()=>{
   const timer=window.setInterval(()=>void loadAvailability(),10000);
   return()=>window.clearInterval(timer);
@@ -58,7 +58,6 @@ export default function BookingPage(){
   return out;
  },[service,hours,publicData,date]);
 
- useEffect(()=>{setTime('')},[serviceId,date]);
  const submit=async()=>{
   if(!service||!time||!name.trim()||!phone.trim()){setError('Completa tus datos y selecciona una hora disponible.');return}
   setError('');setSubmitting(true);
@@ -94,8 +93,8 @@ export default function BookingPage(){
    <div className="border-b border-[#E2E9E5] px-6 py-5"><div className="eyebrow">Reservas online</div><h1 className="mt-1 text-[23px] font-semibold tracking-tight">Agenda tu atención</h1><p className="mt-1 text-[11px] text-[#918f86]">Solo mostramos horarios que siguen disponibles.</p></div>
    {done?<div className="px-6 py-12 text-center"><div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-[#DCEBE6] text-[#68805e]"><CheckCircle2 size={27}/></div><h2 className="text-[20px] font-semibold">Solicitud recibida</h2><p className="mx-auto mt-2 max-w-xs text-[12px] leading-5 text-[#718087]">Tu hora quedó guardada y pendiente de confirmación. El negocio se pondrá en contacto contigo.</p><div className="mt-5 rounded-xl bg-[#DCEBE6] p-4 text-left text-[12px]"><div className="font-semibold">{service?.name}</div><div className="mt-1 text-[#718087]">{date} · {time} · {service?money(service.price):''}</div></div><a className="btn-primary mt-5" target="_blank" rel="noreferrer" href={`https://wa.me/${publicData.business.phone.replace(/\\D/g,'')}?text=${encodeURIComponent(`Hola, acabo de solicitar una hora para ${date} a las ${time}. ¿Me pueden confirmar?`)}`}><MessageCircle size={14}/> Contactar por WhatsApp</a></div>
    :<div className="space-y-5 px-6 py-6">
-    <label className="block text-[11px] font-semibold text-[#6d6b62]">1. Elige un servicio<select className="field mt-1.5" value={serviceId} onChange={e=>setServiceId(e.target.value)}><option value="">Seleccionar servicio</option>{publicData.services.map(s=><option key={s.id} value={s.id}>{s.name} · {s.duration} min · {money(s.price)}</option>)}</select></label>
-    <label className="block text-[11px] font-semibold text-[#6d6b62]">2. Selecciona una fecha<input type="date" min={localDate(new Date())} className="field mt-1.5" value={date} onChange={e=>setDate(e.target.value)}/></label>
+    <label className="block text-[11px] font-semibold text-[#6d6b62]">1. Elige un servicio<select className="field mt-1.5" value={serviceId} onChange={e=>{setServiceId(e.target.value);setTime('')}}><option value="">Seleccionar servicio</option>{publicData.services.map(s=><option key={s.id} value={s.id}>{s.name} · {s.duration} min · {money(s.price)}</option>)}</select></label>
+    <label className="block text-[11px] font-semibold text-[#6d6b62]">2. Selecciona una fecha<input type="date" min={localDate(new Date())} className="field mt-1.5" value={date} onChange={e=>{setDate(e.target.value);setTime('')}}/></label>
     <div><div className="mb-2 text-[11px] font-semibold text-[#6d6b62]">3. Horarios disponibles</div>{!service?<p className="rounded-xl bg-[#DCEBE6] p-3 text-[11px] text-[#99968d]">Primero selecciona un servicio.</p>:!hours?.enabled?<p className="rounded-xl bg-[#DCEBE6] p-3 text-[11px] text-[#99968d]">El negocio no atiende ese día. Prueba otra fecha.</p>:slots.length?<div className="grid grid-cols-3 gap-2 sm:grid-cols-4">{slots.map(s=><button key={s} onClick={()=>setTime(s)} className={`rounded-xl border px-2 py-3 text-[12px] font-semibold transition ${time===s?'border-[#172B3A] bg-[#172B3A] text-white':'border-[#E2E9E5] bg-white text-[#55564e] hover:border-[#397D78]'}`}>{s}</button>)}</div>:<p className="rounded-xl bg-[#DCEBE6] p-3 text-[11px] text-[#99968d]">No quedan horas disponibles para esta fecha.</p>}</div>
     <div className="border-t border-[#E2E9E5] pt-5"><div className="mb-3 text-[11px] font-semibold text-[#6d6b62]">4. Tus datos</div><div className="space-y-3"><input className="field" value={name} onChange={e=>setName(e.target.value)} placeholder="Nombre y apellido"/><input className="field" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="Teléfono / WhatsApp"/><textarea className="field" rows={2} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Notas (opcional)"/></div></div>
     {error&&<p className="text-[11px] text-[#a45f52]">{error}</p>}
