@@ -7,7 +7,7 @@ declare v_name text; v_sector text; v_slug text;
 begin
  v_name:=coalesce(nullif(trim(new.raw_user_meta_data->>'business_name'),''),'Mi negocio');
  v_sector:=coalesce(nullif(trim(new.raw_user_meta_data->>'sector'),''),'other');
- v_slug:=trim(both '-' from regexp_replace(lower(unaccent(v_name)),'[^a-z0-9]+','-','g'))||'-'||substr(replace(new.id::text,'-',''),1,6);
+ v_slug:=trim(both '-' from regexp_replace(lower(v_name),'[^a-z0-9]+','-','g'))||'-'||substr(replace(new.id::text,'-',''),1,6);
  insert into public.businesses(owner_id,name,slug,sector)
  values(new.id,v_name,v_slug,v_sector)
  on conflict(owner_id) do nothing;
