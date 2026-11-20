@@ -5,21 +5,29 @@ AgendaFlow organiza las reservas de un emprendimiento sin complicaciones.
 ## Funciones
 - Agenda diaria y semanal.
 - Crear, editar, confirmar, completar y cancelar reservas.
-- Servicios con precio y duración.
-- Horarios semanales y bloqueos.
-- Enlace público para solicitar una hora.
+- Servicios con precio y duración sincronizados con Supabase.
+- Horarios semanales y bloqueos sincronizados con Supabase.
+- Enlace público que consulta servicios y disponibilidad reales.
+- Reservas públicas guardadas en Supabase junto con los datos del cliente.
+- Validación transaccional para impedir dos reservas simultáneas en la misma franja.
 - Contacto manual por WhatsApp.
 - Registro e inicio de sesión con Supabase Auth.
 - Selección de rubro al registrarse.
-- Demo interactiva con cambio de rubro, días, creación y administración de reservas ficticias.
+- Demo interactiva con datos ficticios.
 
 ## Estado de esta entrega
-El registro y login se conectan a Supabase Auth; la migración 0002 crea un perfil de negocio con su rubro. Los nuevos registros guardan la fecha de inicio y vencimiento de una prueba de 7 días. La demo interactiva usa datos ficticios en el navegador y no modifica cuentas reales. La agenda autenticada todavía funciona con localStorage: reservas, servicios, horarios y clientes aún no se sincronizan entre dispositivos.
+El registro y login se conectan a Supabase Auth. Los nuevos registros crean un negocio con rubro y fechas de prueba de 7 días. La agenda autenticada carga y sincroniza servicios, horarios, bloqueos y reservas con Supabase. El formulario público obtiene los servicios y la disponibilidad mediante una función RPC que no expone datos personales. La creación de reservas públicas utiliza una función transaccional que valida horarios, bloqueos y solapamientos, y guarda el cliente y la reserva. El panel actualiza las reservas periódicamente.
+
+La demo interactiva usa datos ficticios en el navegador y no modifica cuentas reales. Antes de producción aún deben probarse RLS y el flujo completo con dos cuentas/dispositivos distintos, además de revisar el despliegue y la configuración de Auth.
 
 ## Configuración
 1. Crea un proyecto Supabase.
-2. Copia `.env.example` a `.env.local` y completa `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` con los datos de tu proyecto.
-3. Ejecuta las migraciones `0001_agendaflow_schema.sql`, `0002_business_sector_signup.sql` y `0003_business_trial_period.sql` en orden desde Supabase SQL Editor.
+2. Copia `.env.example` a `.env.local` y completa `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+3. Ejecuta las migraciones en orden desde Supabase SQL Editor:
+   - `0001_agendaflow_schema.sql`
+   - `0002_business_sector_signup.sql`
+   - `0003_business_trial_period.sql`
+   - `0004_public_booking_availability.sql`
 4. En Authentication > URL Configuration configura la URL local y la de producción.
 5. Ejecuta `npm install` y `npm run dev`.
 
@@ -30,7 +38,6 @@ El registro y login se conectan a Supabase Auth; la migración 0002 crea un perf
 - `/login` inicio de sesión.
 - `/dashboard` agenda.
 - `/dashboard/servicios`, `/dashboard/horarios`, `/dashboard/clientes`.
-- `/reservar/[slug]` formulario público de demostración local.
+- `/reservar/[slug]` formulario público conectado a Supabase.
 
-## Antes de ofrecerlo como servicio
-Completar la conexión de todas las operaciones de agenda a Supabase, probar RLS con dos cuentas distintas y verificar reservas públicas desde otro dispositivo. No exponer claves `service_role` en el navegador.
+No exponer claves `service_role` ni `secret` en el navegador.
