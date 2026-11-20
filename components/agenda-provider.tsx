@@ -91,7 +91,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
    const supabase=createClient();
    const payload={business_id:businessId,name:s.name,duration_minutes:s.duration,price_clp:s.price,active:s.active};
    void (async()=>{
-    const query=s.id.includes('-')&&!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(s.id)
+    const query=!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(s.id)
       ?await supabase.from('services').insert(payload).select('*').single()
       :await supabase.from('services').update(payload).eq('id',s.id).eq('business_id',businessId).select('*').single();
     if(query.error){console.error(query.error);return}
