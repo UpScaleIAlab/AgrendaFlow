@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
-import { ArrowLeft, ArrowUpRight, CalendarDays, Check, Clock3, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Check, Clock3, Plus, Trash2 } from 'lucide-react';
 
 type Sector = 'barber' | 'beauty' | 'technical';
 type DemoAppointment = { id: number; day: string; time: string; customer: string; service: string; status: 'Confirmada' | 'Pendiente' };
