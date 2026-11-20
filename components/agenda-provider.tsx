@@ -26,8 +26,19 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     const supabase=createClient();
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){if(active)setReady(true);return}
-    const {data:business}=await supabase.from('businesses').select('id,name,slug,phone').eq('owner_id',user.id).maybeSingle();
-    if(!business){if(active)setReady(true);return}
+    let {data:business,error:businessError}=await supabase.from('businesses').select('id,name,slug,phone').eq('owner_id',user.id).maybeSingle();
+    if(businessError)throw businessError;
+    if(!business){
+      const businessName=String(user.user_metadata?.business_name||'Mi negocio').trim()||'Mi negocio';
+      const sector=String(user.user_metadata?.sector||'other');
+      const slugBase=businessName.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'negocio';
+      const {data:created,error:createError}=await supabase.from('businesses').upsert({
+        owner_id:user.id,name:businessName,slug:`${slugBase}-${user.id.replace(/-/g,'').slice(0,6)}`,
+        sector,trial_started_at:new Date().toISOString(),trial_ends_at:new Date(Date.now()+7*24*60*60*1000).toISOString()
+      },{onConflict:'owner_id'}).select('id,name,slug,phone').single();
+      if(createError)throw createError;
+      business=created;
+    }
     if(active)setBusinessId(business.id);
 
     let {data:serviceRows}=await supabase.from('services').select('*').eq('business_id',business.id).order('created_at');
