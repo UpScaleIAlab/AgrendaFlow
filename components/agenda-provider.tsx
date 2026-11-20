@@ -56,6 +56,22 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
   return()=>{active=false};
  },[]);
 
+ useEffect(()=>{
+  if(!businessId)return;
+  let active=true;
+  const refreshAppointments=async()=>{
+   const supabase=createClient();
+   const {data:rows,error}=await supabase.from('appointments').select('*,customers(full_name,phone)').eq('business_id',businessId).order('starts_at');
+   if(error){console.error('No se pudieron actualizar las reservas',error);return}
+   if(!active)return;
+   const appointments:Appointment[]=(rows||[]).map((a:any)=>{const d=new Date(a.starts_at);return{id:a.id,date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,time:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
+   setData(d=>({...d,appointments}));
+  };
+  const timer=window.setInterval(()=>void refreshAppointments(),12000);
+  window.addEventListener('focus',refreshAppointments);
+  return()=>{active=false;window.clearInterval(timer);window.removeEventListener('focus',refreshAppointments)};
+ },[businessId]);
+
  const value=useMemo<ContextValue>(()=>({
   data,ready,
   addAppointment:(a)=>{
