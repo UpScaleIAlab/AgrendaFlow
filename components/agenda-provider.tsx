@@ -46,10 +46,10 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
       supabase.from('appointments').select('*,customers(full_name,phone)').eq('business_id',business.id).order('starts_at'),
       supabase.from('blocked_times').select('*').eq('business_id',business.id).order('starts_at')
     ]);
-    const services:Service[]=(serviceRows||[] as ServiceRow[]).map((s:ServiceRow)=>({id:s.id,name:s.name,duration:s.duration_minutes,price:s.price_clp,active:s.active}));
-    const hours:WorkingDay[]=(hourRows||[] as HoursRow[]).map((h:HoursRow)=>({day:['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][h.weekday],enabled:h.enabled,open:String(h.opens_at).slice(0,5),close:String(h.closes_at).slice(0,5)}));
-    const appointments:Appointment[]=(appointmentRows||[] as AppointmentRow[]).map((a:AppointmentRow)=>{const slot=fromIso(a.starts_at);return{id:a.id,date:slot.date,time:slot.time,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
-    const blocked:BlockedTime[]=(blockedRows||[] as BlockedRow[]).map((b:BlockedRow)=>{const start=fromIso(b.starts_at),end=fromIso(b.ends_at);return{id:b.id,date:start.date,start:start.time,end:end.time,reason:b.reason}});
+    const services:Service[]=((serviceRows||[]) as ServiceRow[]).map((s:ServiceRow)=>({id:s.id,name:s.name,duration:s.duration_minutes,price:s.price_clp,active:s.active}));
+    const hours:WorkingDay[]=((hourRows||[]) as HoursRow[]).map((h:HoursRow)=>({day:['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][h.weekday],enabled:h.enabled,open:String(h.opens_at).slice(0,5),close:String(h.closes_at).slice(0,5)}));
+    const appointments:Appointment[]=((appointmentRows||[]) as AppointmentRow[]).map((a:AppointmentRow)=>{const slot=fromIso(a.starts_at);return{id:a.id,date:slot.date,time:slot.time,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
+    const blocked:BlockedTime[]=((blockedRows||[]) as BlockedRow[]).map((b:BlockedRow)=>{const start=fromIso(b.starts_at),end=fromIso(b.ends_at);return{id:b.id,date:start.date,start:start.time,end:end.time,reason:b.reason}});
     if(active){
       setData({businessName:business.name,slug:business.slug,phone:business.phone||'',services,hours,appointments,blocked});
       setReady(true);
@@ -68,7 +68,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
    const {data:rows,error}=await supabase.from('appointments').select('*,customers(full_name,phone)').eq('business_id',businessId).order('starts_at');
    if(error){console.error('No se pudieron actualizar las reservas',error);return}
    if(!active)return;
-   const appointments:Appointment[]=(rows||[] as AppointmentRow[]).map((a:AppointmentRow)=>{const d=new Date(a.starts_at);return{id:a.id,date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,time:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
+   const appointments:Appointment[]=((rows||[]) as AppointmentRow[]).map((a:AppointmentRow)=>{const d=new Date(a.starts_at);return{id:a.id,date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,time:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
    setData(d=>({...d,appointments}));
   };
   const timer=window.setInterval(()=>void refreshAppointments(),12000);
