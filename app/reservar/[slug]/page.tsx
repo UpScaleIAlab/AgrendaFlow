@@ -38,7 +38,10 @@ export default function BookingPage(){
   setLoading(false);
  },[params.slug]);
 
- useEffect(()=>{\n  const timer=window.setTimeout(()=>{void loadAvailability()},0);\n  return()=>window.clearTimeout(timer);\n },[loadAvailability]);
+ useEffect(()=>{
+  const timer=window.setTimeout(()=>{void loadAvailability()},0);
+  return()=>window.clearTimeout(timer);
+ },[loadAvailability]);
  useEffect(()=>{
   const timer=window.setInterval(()=>void loadAvailability(),10000);
   return()=>window.clearInterval(timer);
