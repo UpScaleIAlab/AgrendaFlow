@@ -11,15 +11,15 @@ AgendaFlow organiza las reservas de un emprendimiento sin complicaciones.
 - Contacto manual por WhatsApp.
 - Registro e inicio de sesión con Supabase Auth.
 - Selección de rubro al registrarse.
-- Demos de barbería, estética y servicios técnicos con datos ficticios y de solo lectura.
+- Demo interactiva con cambio de rubro, días, creación y administración de reservas ficticias.
 
 ## Estado de esta entrega
-El registro y login se conectan a Supabase Auth; la migración 0002 crea un perfil de negocio con su rubro. La agenda original todavía funciona con localStorage. Por eso, las reservas, servicios, horarios y clientes aún no se sincronizan entre dispositivos. La demo es ilustrativa y no crea reservas.
+El registro y login se conectan a Supabase Auth; la migración 0002 crea un perfil de negocio con su rubro. Los nuevos registros guardan la fecha de inicio y vencimiento de una prueba de 7 días. La demo interactiva usa datos ficticios en el navegador y no modifica cuentas reales. La agenda autenticada todavía funciona con localStorage: reservas, servicios, horarios y clientes aún no se sincronizan entre dispositivos.
 
 ## Configuración
 1. Crea un proyecto Supabase.
-2. Configura `.env.local` con `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-3. Ejecuta las migraciones `0001_agendaflow_schema.sql` y `0002_business_sector_signup.sql` en orden desde Supabase SQL Editor.
+2. Copia `.env.example` a `.env.local` y completa `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` con los datos de tu proyecto.
+3. Ejecuta las migraciones `0001_agendaflow_schema.sql`, `0002_business_sector_signup.sql` y `0003_business_trial_period.sql` en orden desde Supabase SQL Editor.
 4. En Authentication > URL Configuration configura la URL local y la de producción.
 5. Ejecuta `npm install` y `npm run dev`.
 
