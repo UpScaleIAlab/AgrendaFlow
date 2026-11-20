@@ -6,7 +6,11 @@ import type { AgendaData, Appointment, Service, WorkingDay, BlockedTime } from '
 
 type ContextValue = { data: AgendaData; ready: boolean; addAppointment:(a:Omit<Appointment,'id'>)=>{ok:boolean;message?:string}; updateAppointment:(id:string, patch:Partial<Appointment>)=>{ok:boolean;message?:string}; deleteAppointment:(id:string)=>void; saveService:(s:Service)=>void; deleteService:(id:string)=>void; saveHours:(h:WorkingDay[])=>void; addBlocked:(b:Omit<BlockedTime,'id'>)=>void; removeBlocked:(id:string)=>void; updateBusiness:(patch:Partial<Pick<AgendaData,'businessName'|'phone'|'slug'>>)=>void };
 const Ctx = createContext<ContextValue | null>(null);
-const key='agendaflow-simple-v1';
+
+type ServiceRow={id:string;name:string;duration_minutes:number;price_clp:number;active:boolean};
+type HoursRow={weekday:number;enabled:boolean;opens_at:string;closes_at:string};
+type AppointmentRow={id:string;starts_at:string;service_id:string|null;notes:string|null;status:Appointment['status'];customers:{full_name:string;phone:string}|null};
+type BlockedRow={id:string;starts_at:string;ends_at:string;reason:string};
 const dayNames=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 const toIso=(date:string,time:string)=>new Date(`${date}T${time}:00`).toISOString();
 const fromIso=(value:string)=>{const d=new Date(value);return {date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,time:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}};
@@ -42,10 +46,10 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
       supabase.from('appointments').select('*,customers(full_name,phone)').eq('business_id',business.id).order('starts_at'),
       supabase.from('blocked_times').select('*').eq('business_id',business.id).order('starts_at')
     ]);
-    const services:Service[]=(serviceRows||[]).map((s:any)=>({id:s.id,name:s.name,duration:s.duration_minutes,price:s.price_clp,active:s.active}));
-    const hours:WorkingDay[]=(hourRows||[]).map((h:any)=>({day:['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][h.weekday],enabled:h.enabled,open:String(h.opens_at).slice(0,5),close:String(h.closes_at).slice(0,5)}));
-    const appointments:Appointment[]=(appointmentRows||[]).map((a:any)=>{const slot=fromIso(a.starts_at);return{id:a.id,date:slot.date,time:slot.time,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
-    const blocked:BlockedTime[]=(blockedRows||[]).map((b:any)=>{const start=fromIso(b.starts_at),end=fromIso(b.ends_at);return{id:b.id,date:start.date,start:start.time,end:end.time,reason:b.reason}});
+    const services:Service[]=(serviceRows||[] as ServiceRow[]).map((s:ServiceRow)=>({id:s.id,name:s.name,duration:s.duration_minutes,price:s.price_clp,active:s.active}));
+    const hours:WorkingDay[]=(hourRows||[] as HoursRow[]).map((h:HoursRow)=>({day:['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][h.weekday],enabled:h.enabled,open:String(h.opens_at).slice(0,5),close:String(h.closes_at).slice(0,5)}));
+    const appointments:Appointment[]=(appointmentRows||[] as AppointmentRow[]).map((a:AppointmentRow)=>{const slot=fromIso(a.starts_at);return{id:a.id,date:slot.date,time:slot.time,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
+    const blocked:BlockedTime[]=(blockedRows||[] as BlockedRow[]).map((b:BlockedRow)=>{const start=fromIso(b.starts_at),end=fromIso(b.ends_at);return{id:b.id,date:start.date,start:start.time,end:end.time,reason:b.reason}});
     if(active){
       setData({businessName:business.name,slug:business.slug,phone:business.phone||'',services,hours,appointments,blocked});
       setReady(true);
@@ -64,7 +68,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
    const {data:rows,error}=await supabase.from('appointments').select('*,customers(full_name,phone)').eq('business_id',businessId).order('starts_at');
    if(error){console.error('No se pudieron actualizar las reservas',error);return}
    if(!active)return;
-   const appointments:Appointment[]=(rows||[]).map((a:any)=>{const d=new Date(a.starts_at);return{id:a.id,date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,time:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
+   const appointments:Appointment[]=(rows||[] as AppointmentRow[]).map((a:AppointmentRow)=>{const d=new Date(a.starts_at);return{id:a.id,date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,time:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
    setData(d=>({...d,appointments}));
   };
   const timer=window.setInterval(()=>void refreshAppointments(),12000);
