@@ -32,7 +32,7 @@ export default function BookingPage(){
   if(!params.slug)return;
   const supabase=createClient();
   const {data,error}=await supabase.rpc('get_public_booking_data',{p_slug:params.slug});
-  if(error){console.error('No se pudo consultar disponibilidad',error);setError('No pudimos cargar la agenda. Intenta nuevamente más tarde.');}
+  if(error){console.error('No se pudo consultar disponibilidad',error);setError('No pudimos consultar la agenda: '+error.message);setPublicData(null);}
   else if(data)setPublicData(data as PublicBookingData);
   else setPublicData(null);
   setLoading(false);
@@ -88,7 +88,7 @@ export default function BookingPage(){
  };
 
  if(loading)return <main className="grid min-h-screen place-items-center bg-[#F5F7F4] text-sm text-[#718087]">Cargando disponibilidad...</main>;
- if(!publicData)return <main className="grid min-h-screen place-items-center bg-[#F5F7F4] p-6"><div className="panel max-w-md p-8 text-center"><CalendarDays className="mx-auto mb-4 text-[#397D78]" size={28}/><h1 className="text-xl font-semibold">Enlace no disponible</h1><p className="mt-2 text-sm text-[#718087]">No encontramos este negocio o todavía no tiene disponibilidad configurada.</p><Link href="/" className="btn-primary mt-5">Ir al inicio</Link></div></main>;
+ if(!publicData)return <main className="grid min-h-screen place-items-center bg-[#F5F7F4] p-6"><div className="panel max-w-md p-8 text-center"><CalendarDays className="mx-auto mb-4 text-[#397D78]" size={28}/><h1 className="text-xl font-semibold">Enlace no disponible</h1><p className="mt-2 text-sm text-[#718087]">{error||'No encontramos este negocio o todavía no tiene disponibilidad configurada.'}</p><Link href="/" className="btn-primary mt-5">Ir al inicio</Link></div></main>;
 
  return <main className="min-h-screen bg-[#F5F7F4] px-4 py-8 md:py-14"><div className="mx-auto max-w-[520px]">
   <div className="mb-7 text-center"><div className="brand-mark mx-auto mb-4"><CalendarDays size={20}/></div><div className="text-[19px] font-semibold tracking-tight">{publicData.business.name}</div><p className="mt-1 text-[11px] text-[#8d8b82]">Reserva tu hora de forma sencilla</p></div>
