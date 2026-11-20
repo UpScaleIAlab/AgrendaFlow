@@ -25,7 +25,7 @@ El registro y login se conectan a Supabase Auth; la migración 0002 crea un perf
 
 ## Rutas
 - `/` landing.
-- `/demo` ejemplos de solo lectura.
+- `/demo` demo interactiva con datos ficticios.
 - `/registro` alta de cuenta con rubro.
 - `/login` inicio de sesión.
 - `/dashboard` agenda.
