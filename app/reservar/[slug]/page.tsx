@@ -11,7 +11,6 @@ type PublicHour={weekday:number;enabled:boolean;opens_at:string;closes_at:string
 type BusySlot={starts_at:string;ends_at:string};
 type PublicBookingData={business:{name:string;phone:string;slug:string;timezone:string};services:PublicService[];hours:PublicHour[];busy:BusySlot[]};
 const mins=(t:string)=>{const [h,m]=t.split(':').map(Number);return h*60+m};
-const timeOf=(value:string)=>{const d=new Date(value);return d.getHours()*60+d.getMinutes()};
 const fmt=(n:number)=>`${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
 
 export default function BookingPage(){
