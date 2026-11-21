@@ -4,7 +4,7 @@ import { initialData } from '@/lib/initial-data';
 import { createClient } from '@/lib/supabase/client';
 import type { AgendaData, Appointment, Service, WorkingDay, BlockedTime } from '@/lib/types';
 
-type ContextValue = { data: AgendaData; ready: boolean; addAppointment:(a:Omit<Appointment,'id'>)=>Promise<{ok:boolean;message?:string}>; updateAppointment:(id:string, patch:Partial<Appointment>)=>Promise<{ok:boolean;message?:string}>; deleteAppointment:(id:string)=>void; saveService:(s:Service)=>Promise<{ok:boolean;message?:string}>; deleteService:(id:string)=>void; saveHours:(h:WorkingDay[])=>Promise<{ok:boolean;message?:string}>; addBlocked:(b:Omit<BlockedTime,'id'>)=>Promise<{ok:boolean;message?:string}>; removeBlocked:(id:string)=>void; updateBusiness:(patch:Partial<Pick<AgendaData,'businessName'|'phone'|'slug'>>)=>Promise<{ok:boolean;message?:string}> };
+type ContextValue = { data: AgendaData; ready: boolean; addAppointment:(a:Omit<Appointment,'id'>)=>Promise<{ok:boolean;message?:string}>; updateAppointment:(id:string, patch:Partial<Appointment>)=>Promise<{ok:boolean;message?:string}>; deleteAppointment:(id:string)=>Promise<{ok:boolean;message?:string}>; saveService:(s:Service)=>Promise<{ok:boolean;message?:string}>; deleteService:(id:string)=>Promise<{ok:boolean;message?:string}>; saveHours:(h:WorkingDay[])=>Promise<{ok:boolean;message?:string}>; addBlocked:(b:Omit<BlockedTime,'id'>)=>Promise<{ok:boolean;message?:string}>; removeBlocked:(id:string)=>void; updateBusiness:(patch:Partial<Pick<AgendaData,'businessName'|'phone'|'slug'>>)=>Promise<{ok:boolean;message?:string}> };
 const Ctx = createContext<ContextValue | null>(null);
 
 type ServiceRow={id:string;name:string;duration_minutes:number;price_clp:number;active:boolean};
@@ -148,14 +148,18 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
    if(customerError||!customer)return {ok:false,message:customerError?.message||'No se pudo guardar el cliente.'};
    const service=data.services.find(s=>s.id===next.serviceId);
    const startsAt=new Date(`${next.date}T${next.time}:00`).toISOString();
-   const {error}=await supabase.from('appointments').update({customer_id:customer.id,service_id:next.serviceId,starts_at:startsAt,ends_at:new Date(new Date(startsAt).getTime()*(1)+((service?.duration||30)*60000)).toISOString(),status:next.status,notes:next.notes||null}).eq('id',id).eq('business_id',businessId);
+   const {error}=await supabase.from('appointments').update({customer_id:customer.id,service_id:next.serviceId,starts_at:startsAt,ends_at:new Date(new Date(startsAt).getTime()+((service?.duration||30)*60000)).toISOString(),status:next.status,notes:next.notes||null}).eq('id',id).eq('business_id',businessId);
    if(error)return {ok:false,message:error.message};
    setData(d=>({...d,appointments:d.appointments.map(a=>a.id===id?next:a)}));
    return {ok:true};
   },
-  deleteAppointment:(id)=>{
-   if(businessId&&!id.startsWith('local-'))void createClient().from('appointments').delete().eq('id',id).eq('business_id',businessId).then(({error})=>{if(error)console.error(error);else setData(d=>({...d,appointments:d.appointments.filter(a=>a.id!==id)}))});
-   else setData(d=>({...d,appointments:d.appointments.filter(a=>a.id!==id)}));
+  deleteAppointment:async(id)=>{
+   if(businessId&&!id.startsWith('local-')){
+    const {error}=await createClient().from('appointments').delete().eq('id',id).eq('business_id',businessId);
+    if(error)return {ok:false,message:error.message};
+   }
+   setData(d=>({...d,appointments:d.appointments.filter(a=>a.id!==id)}));
+   return {ok:true};
   },
   saveService:async(s)=>{
    if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
@@ -171,9 +175,12 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
    setData(d=>({...d,services:d.services.some(x=>x.id===s.id)?d.services.map(x=>x.id===s.id?saved:x):[...d.services,saved]}));
    return {ok:true};
   },
-  deleteService:(id)=>{
+  deleteService:async(id)=>{
+   if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
+   const {error}=await createClient().from('services').delete().eq('id',id).eq('business_id',businessId);
+   if(error)return {ok:false,message:error.message};
    setData(d=>({...d,services:d.services.filter(s=>s.id!==id)}));
-   if(businessId)void createClient().from('services').delete().eq('id',id).eq('business_id',businessId).then(({error})=>{if(error)console.error(error)});
+   return {ok:true};
   },
   saveHours:async(h)=>{
    if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
