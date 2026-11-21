@@ -44,7 +44,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     }
     if(active)setBusinessId(business.id);
 
-    let {data:serviceRows,error:servicesError}=await supabase.from('services').select('*').eq('business_id',business.id).order('created_at');if(servicesError)throw new Error(`Error al cargar servicios (${servicesError.code||'Supabase'}): ${servicesError.message}`);
+    const {data:serviceRows,error:servicesError}=await supabase.from('services').select('*').eq('business_id',business.id).order('created_at');if(servicesError)throw new Error(`Error al cargar servicios (${servicesError.code||'Supabase'}): ${servicesError.message}`);
     // No insertamos servicios de ejemplo automáticamente: evita duplicados en el montaje doble de React Strict Mode.
     let {data:hourRows,error:hoursError}=await supabase.from('working_hours').select('*').eq('business_id',business.id).order('weekday');if(hoursError)throw new Error(`Error al cargar horarios (${hoursError.code||'Supabase'}): ${hoursError.message}`);
     if(!hourRows?.length){
@@ -230,7 +230,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
    setData(d=>({...d,...p}));
    return {ok:true};
   }
- }),[data,ready,businessId]);
+ }),[data,ready,loadError,businessId]);
  return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
 export function useAgenda(){const c=useContext(Ctx);if(!c)throw new Error('useAgenda debe usarse dentro de AgendaProvider');return c;}
