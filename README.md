@@ -28,6 +28,9 @@ La demo interactiva usa datos ficticios en el navegador y no modifica cuentas re
    - `0002_business_sector_signup.sql`
    - `0003_business_trial_period.sql`
    - `0004_public_booking_availability.sql`
+   - `0005_appointment_integrity.sql`
+   - `0006_booking_lock_consistency.sql`
+   - `0007_authenticated_table_permissions.sql`
 4. En Authentication > URL Configuration configura la URL local y la de producción.
 5. Ejecuta `npm install` y `npm run dev`.
 
