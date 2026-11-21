@@ -45,14 +45,14 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     let {data:serviceRows,error:servicesError}=await supabase.from('services').select('*').eq('business_id',business.id).order('created_at');if(servicesError)throw servicesError;
     if(!serviceRows?.length){
       const seed=initialData.services.map(s=>({business_id:business.id,name:s.name,duration_minutes:s.duration,price_clp:s.price,active:s.active}));
-      const inserted=await supabase.from('services').insert(seed);
-      if(!inserted.error){const q=await supabase.from('services').select('*').eq('business_id',business.id).order('created_at');serviceRows=q.data}
+      const inserted=await supabase.from('services').insert(seed);if(inserted.error)throw inserted.error;
+      const q=await supabase.from('services').select('*').eq('business_id',business.id).order('created_at');if(q.error)throw q.error;serviceRows=q.data
     }
     let {data:hourRows,error:hoursError}=await supabase.from('working_hours').select('*').eq('business_id',business.id).order('weekday');if(hoursError)throw hoursError;
     if(!hourRows?.length){
       const seed=initialData.hours.map(h=>({business_id:business.id,weekday:dayNames.indexOf(h.day.toLowerCase()),opens_at:h.open,closes_at:h.close,enabled:h.enabled}));
-      const inserted=await supabase.from('working_hours').insert(seed);
-      if(!inserted.error){const q=await supabase.from('working_hours').select('*').eq('business_id',business.id).order('weekday');hourRows=q.data}
+      const inserted=await supabase.from('working_hours').insert(seed);if(inserted.error)throw inserted.error;
+      const q=await supabase.from('working_hours').select('*').eq('business_id',business.id).order('weekday');if(q.error)throw q.error;hourRows=q.data
     }
     const [{data:appointmentRows,error:appointmentsError},{data:blockedRows,error:blockedError}]=await Promise.all([
       supabase.from('appointments').select('*,customers(full_name,phone)').eq('business_id',business.id).order('starts_at'),
@@ -131,6 +131,10 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     if(!service)return {ok:false,message:'Selecciona un servicio activo.'};
     const start=new Date(`${next.date}T${next.time}:00`).getTime(),end=start+service.duration*60000;
     if(!Number.isFinite(start)||start<=Date.now())return {ok:false,message:'La reserva debe quedar en una fecha y hora futura.'};
+    const weekday=dayNames[new Date(`${next.date}T12:00:00`).getDay()],day=data.hours.find(h=>h.day.toLowerCase()===weekday);
+    const endTime=new Date(end).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});
+    if(!day?.enabled||next.time<day.open||endTime>day.close)return {ok:false,message:'La reserva queda fuera del horario de atención.'};
+    if(data.blocked.some(b=>b.date===next.date&&next.time<b.end&&end>new Date(`${b.date}T${b.start}:00`).getTime()))return {ok:false,message:'Ese horario está bloqueado.'};
     const conflict=data.appointments.some(x=>{
      if(x.id===id||x.status==='cancelled')return false;
      const xs=new Date(`${x.date}T${x.time}:00`).getTime(),xd=data.services.find(s=>s.id===x.serviceId)?.duration||30;
