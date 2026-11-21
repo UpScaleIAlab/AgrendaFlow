@@ -88,11 +88,11 @@ create policy "business access blocked times" on public.blocked_times for all to
 create or replace function public.agendaflow_protect_subscription_fields()
 returns trigger
 language plpgsql
-security definer
 set search_path = public
 as $$
 begin
-  if coalesce(auth.role(), '') <> 'service_role' then
+  if coalesce(auth.role(), '') <> 'service_role'
+     and current_user not in ('postgres','supabase_admin') then
     if new.trial_started_at is distinct from old.trial_started_at
        or new.trial_ends_at is distinct from old.trial_ends_at
        or new.subscription_status is distinct from old.subscription_status
