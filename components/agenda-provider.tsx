@@ -226,9 +226,11 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
   },
   updateBusiness:async(p)=>{
    if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
-   const {error}=await createClient().from('businesses').update({name:p.businessName,phone:p.phone}).eq('id',businessId);
-   if(error)return {ok:false,message:error.message};
-   setData(d=>({...d,...p}));
+   const payload={name:String(p.businessName??data.businessName).trim(),phone:String(p.phone??data.phone)};
+   if(!payload.name)return {ok:false,message:'El nombre del negocio es obligatorio.'};
+   const {data:updated,error}=await createClient().from('businesses').update(payload).eq('id',businessId).select('name,phone').single();
+   if(error||!updated)return {ok:false,message:error?.message||'No se pudieron confirmar los datos del negocio.'};
+   setData(d=>({...d,businessName:updated.name,phone:updated.phone??''}));
    return {ok:true};
   }
  }),[data,ready,loadError,businessId]);
