@@ -180,10 +180,10 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
    if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
    if(!b.date||b.start>=b.end)return {ok:false,message:'Revisa la fecha y el rango del bloqueo.'};
    const start=new Date(`${b.date}T${b.start}:00`).getTime(),end=new Date(`${b.date}T${b.end}:00`).getTime();
-   if(data.appointments.some(a=>a.status!=='cancelled'&&a.date===b.date){
+   if(data.appointments.some(a=>a.status!=='cancelled'&&a.date===b.date&&(()=>{
     const as=new Date(`${a.date}T${a.time}:00`).getTime(),duration=data.services.find(s=>s.id===a.serviceId)?.duration||30;
     return start<as+duration*60000&&end>as;
-   }))return {ok:false,message:'Ese bloqueo coincide con una reserva existente.'};
+   })()))return {ok:false,message:'Ese bloqueo coincide con una reserva existente.'};
    const {data:row,error}=await createClient().from('blocked_times').insert({business_id:businessId,starts_at:toIso(b.date,b.start),ends_at:toIso(b.date,b.end),reason:b.reason}).select('*').single();
    if(error||!row)return {ok:false,message:error?.message||'No se pudo guardar el bloqueo.'};
    const a=fromIso(row.starts_at),z=fromIso(row.ends_at);
