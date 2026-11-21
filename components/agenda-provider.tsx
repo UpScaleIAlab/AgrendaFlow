@@ -178,9 +178,10 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
    if(!Number.isFinite(s.duration)||s.duration<5||!Number.isFinite(s.price)||s.price<0)return {ok:false,message:'Revisa duración y precio.'};
    const supabase=createClient();
    const payload={business_id:businessId,name:s.name.trim(),duration_minutes:s.duration,price_clp:s.price,active:s.active};
-   const query=!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(s.id)
-    ?await supabase.from('services').insert(payload).select('*').single()
-    :await supabase.from('services').update(payload).eq('id',s.id).eq('business_id',businessId).select('*').single();
+   const isPersistedId=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s.id);
+   const query=isPersistedId
+    ?await supabase.from('services').update(payload).eq('id',s.id).eq('business_id',businessId).select('*').single()
+    :await supabase.from('services').insert(payload).select('*').single();
    if(query.error||!query.data)return {ok:false,message:query.error?.message||'No se pudo guardar el servicio.'};
    const row=query.data,saved={id:row.id,name:row.name,duration:row.duration_minutes,price:row.price_clp,active:row.active};
    setData(d=>({...d,services:d.services.some(x=>x.id===s.id)?d.services.map(x=>x.id===s.id?saved:x):[...d.services,saved]}));
