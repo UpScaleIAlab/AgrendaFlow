@@ -32,7 +32,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     if(!business){
       const businessName=String(user.user_metadata?.business_name||'Mi negocio').trim()||'Mi negocio';
       const sector=String(user.user_metadata?.sector||'other');
-      const slugBase=businessName.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'negocio';
+      const slugBase=businessName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'negocio';
       const {data:created,error:createError}=await supabase.from('businesses').upsert({
         owner_id:user.id,name:businessName,slug:`${slugBase}-${user.id.replace(/-/g,'').slice(0,6)}`,
         sector,trial_started_at:new Date().toISOString(),trial_ends_at:new Date(Date.now()+7*24*60*60*1000).toISOString()
