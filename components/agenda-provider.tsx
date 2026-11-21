@@ -4,7 +4,7 @@ import { initialData } from '@/lib/initial-data';
 import { createClient } from '@/lib/supabase/client';
 import type { AgendaData, Appointment, Service, WorkingDay, BlockedTime } from '@/lib/types';
 
-type ContextValue = { data: AgendaData; ready: boolean; addAppointment:(a:Omit<Appointment,'id'>)=>Promise<{ok:boolean;message?:string}>; updateAppointment:(id:string, patch:Partial<Appointment>)=>Promise<{ok:boolean;message?:string}>; deleteAppointment:(id:string)=>Promise<{ok:boolean;message?:string}>; saveService:(s:Service)=>Promise<{ok:boolean;message?:string}>; deleteService:(id:string)=>Promise<{ok:boolean;message?:string}>; saveHours:(h:WorkingDay[])=>Promise<{ok:boolean;message?:string}>; addBlocked:(b:Omit<BlockedTime,'id'>)=>Promise<{ok:boolean;message?:string}>; removeBlocked:(id:string)=>void; updateBusiness:(patch:Partial<Pick<AgendaData,'businessName'|'phone'|'slug'>>)=>Promise<{ok:boolean;message?:string}> };
+type ContextValue = { data: AgendaData; ready: boolean; loadError:string|null; addAppointment:(a:Omit<Appointment,'id'>)=>Promise<{ok:boolean;message?:string}>; updateAppointment:(id:string, patch:Partial<Appointment>)=>Promise<{ok:boolean;message?:string}>; deleteAppointment:(id:string)=>Promise<{ok:boolean;message?:string}>; saveService:(s:Service)=>Promise<{ok:boolean;message?:string}>; deleteService:(id:string)=>Promise<{ok:boolean;message?:string}>; saveHours:(h:WorkingDay[])=>Promise<{ok:boolean;message?:string}>; addBlocked:(b:Omit<BlockedTime,'id'>)=>Promise<{ok:boolean;message?:string}>; removeBlocked:(id:string)=>void; updateBusiness:(patch:Partial<Pick<AgendaData,'businessName'|'phone'|'slug'>>)=>Promise<{ok:boolean;message?:string}> };
 const Ctx = createContext<ContextValue | null>(null);
 
 type ServiceRow={id:string;name:string;duration_minutes:number;price_clp:number;active:boolean};
@@ -17,12 +17,14 @@ const fromIso=(value:string)=>{const d=new Date(value);return {date:`${d.getFull
 export function AgendaProvider({children}:{children:React.ReactNode}) {
  const [data,setData]=useState<AgendaData>(initialData);
  const [ready,setReady]=useState(false);
+ const [loadError,setLoadError]=useState<string|null>(null);
  const [businessId,setBusinessId]=useState<string|null>(null);
 
  useEffect(()=>{
   let active=true;
   const load=async()=>{
    try{
+    if(active)setLoadError(null);
     const supabase=createClient();
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){if(active)setReady(true);return}
@@ -67,7 +69,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
       setData({businessName:business.name,slug:business.slug,phone:business.phone||'',services,hours,appointments,blocked});
       setReady(true);
     }
-   }catch(error){console.error('AgendaFlow: no se pudo cargar la agenda desde Supabase',error);if(active){setData(d=>({...d,services:[],hours:[],appointments:[],blocked:[]}));setReady(true)}}
+   }catch(error){console.error('AgendaFlow: no se pudo cargar la agenda desde Supabase',error);if(active){setLoadError(error instanceof Error?error.message:'Error desconocido al cargar datos.');setData(d=>({...d,services:[],hours:[],appointments:[],blocked:[]}));setReady(true)}}
   };
   void load();
   return()=>{active=false};
@@ -90,7 +92,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
  },[businessId]);
 
  const value=useMemo<ContextValue>(()=>({
-  data,ready,
+  data,ready,loadError,
   addAppointment:async(a)=>{
    const service=data.services.find(s=>s.id===a.serviceId&&s.active);
    if(!service)return {ok:false,message:'Selecciona un servicio activo.'};
