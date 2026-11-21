@@ -108,3 +108,6 @@ create trigger agendaflow_validate_blocked_time
 before insert or update of business_id,starts_at,ends_at
 on public.blocked_times
 for each row execute function public.agendaflow_validate_blocked_time();
+
+revoke all on function public.agendaflow_validate_appointment() from public;
+revoke all on function public.agendaflow_validate_blocked_time() from public;
