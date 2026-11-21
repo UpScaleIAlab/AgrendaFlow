@@ -42,22 +42,23 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     }
     if(active)setBusinessId(business.id);
 
-    let {data:serviceRows}=await supabase.from('services').select('*').eq('business_id',business.id).order('created_at');
+    let {data:serviceRows,error:servicesError}=await supabase.from('services').select('*').eq('business_id',business.id).order('created_at');if(servicesError)throw servicesError;
     if(!serviceRows?.length){
       const seed=initialData.services.map(s=>({business_id:business.id,name:s.name,duration_minutes:s.duration,price_clp:s.price,active:s.active}));
       const inserted=await supabase.from('services').insert(seed);
       if(!inserted.error){const q=await supabase.from('services').select('*').eq('business_id',business.id).order('created_at');serviceRows=q.data}
     }
-    let {data:hourRows}=await supabase.from('working_hours').select('*').eq('business_id',business.id).order('weekday');
+    let {data:hourRows,error:hoursError}=await supabase.from('working_hours').select('*').eq('business_id',business.id).order('weekday');if(hoursError)throw hoursError;
     if(!hourRows?.length){
       const seed=initialData.hours.map(h=>({business_id:business.id,weekday:dayNames.indexOf(h.day.toLowerCase()),opens_at:h.open,closes_at:h.close,enabled:h.enabled}));
       const inserted=await supabase.from('working_hours').insert(seed);
       if(!inserted.error){const q=await supabase.from('working_hours').select('*').eq('business_id',business.id).order('weekday');hourRows=q.data}
     }
-    const [{data:appointmentRows},{data:blockedRows}]=await Promise.all([
+    const [{data:appointmentRows,error:appointmentsError},{data:blockedRows,error:blockedError}]=await Promise.all([
       supabase.from('appointments').select('*,customers(full_name,phone)').eq('business_id',business.id).order('starts_at'),
       supabase.from('blocked_times').select('*').eq('business_id',business.id).order('starts_at')
     ]);
+    if(appointmentsError)throw appointmentsError;if(blockedError)throw blockedError;
     const services:Service[]=((serviceRows||[]) as ServiceRow[]).map((s:ServiceRow)=>({id:s.id,name:s.name,duration:s.duration_minutes,price:s.price_clp,active:s.active}));
     const hours:WorkingDay[]=((hourRows||[]) as HoursRow[]).map((h:HoursRow)=>({day:['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][h.weekday],enabled:h.enabled,open:String(h.opens_at).slice(0,5),close:String(h.closes_at).slice(0,5)}));
     const appointments:Appointment[]=((appointmentRows||[]) as AppointmentRow[]).map((a:AppointmentRow)=>{const slot=fromIso(a.starts_at);return{id:a.id,date:slot.date,time:slot.time,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
@@ -66,7 +67,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
       setData({businessName:business.name,slug:business.slug,phone:business.phone||'',services,hours,appointments,blocked});
       setReady(true);
     }
-   }catch(error){console.error('AgendaFlow: no se pudo cargar la agenda desde Supabase',error);if(active)setReady(true)}
+   }catch(error){console.error('AgendaFlow: no se pudo cargar la agenda desde Supabase',error);if(active){setData(d=>({...d,services:[],hours:[],appointments:[],blocked:[]}));setReady(true)}}
   };
   void load();
   return()=>{active=false};
