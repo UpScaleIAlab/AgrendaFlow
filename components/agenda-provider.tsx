@@ -46,7 +46,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
 
     const {data:serviceRows,error:servicesError}=await supabase.from('services').select('*').eq('business_id',business.id).order('created_at');if(servicesError)throw new Error(`Error al cargar servicios (${servicesError.code||'Supabase'}): ${servicesError.message}`);
     // No insertamos servicios de ejemplo automáticamente: evita duplicados en el montaje doble de React Strict Mode.
-    let {data:hourRows,error:hoursError}=await supabase.from('working_hours').select('*').eq('business_id',business.id).order('weekday');if(hoursError)throw new Error(`Error al cargar horarios (${hoursError.code||'Supabase'}): ${hoursError.message}`);
+    const {data:loadedHourRows,error:hoursError}=await supabase.from('working_hours').select('*').eq('business_id',business.id).order('weekday');let hourRows=loadedHourRows;if(hoursError)throw new Error(`Error al cargar horarios (${hoursError.code||'Supabase'}): ${hoursError.message}`);
     if(!hourRows?.length){
       const seed=initialData.hours.map(h=>({business_id:business.id,weekday:dayNames.indexOf(h.day.toLowerCase()),opens_at:h.open,closes_at:h.close,enabled:h.enabled}));
       const inserted=await supabase.from('working_hours').upsert(seed,{onConflict:'business_id,weekday'});if(inserted.error)throw new Error(`No se pudieron inicializar los horarios (${inserted.error.code||'Supabase'}): ${inserted.error.message}`);
