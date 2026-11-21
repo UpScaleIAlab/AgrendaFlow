@@ -4,7 +4,7 @@ import { initialData } from '@/lib/initial-data';
 import { createClient } from '@/lib/supabase/client';
 import type { AgendaData, Appointment, Service, WorkingDay, BlockedTime } from '@/lib/types';
 
-type ContextValue = { data: AgendaData; ready: boolean; addAppointment:(a:Omit<Appointment,'id'>)=>Promise<{ok:boolean;message?:string}>; updateAppointment:(id:string, patch:Partial<Appointment>)=>Promise<{ok:boolean;message?:string}>; deleteAppointment:(id:string)=>void; saveService:(s:Service)=>Promise<{ok:boolean;message?:string}>; deleteService:(id:string)=>void; saveHours:(h:WorkingDay[])=>void; addBlocked:(b:Omit<BlockedTime,'id'>)=>void; removeBlocked:(id:string)=>void; updateBusiness:(patch:Partial<Pick<AgendaData,'businessName'|'phone'|'slug'>>)=>void };
+type ContextValue = { data: AgendaData; ready: boolean; addAppointment:(a:Omit<Appointment,'id'>)=>Promise<{ok:boolean;message?:string}>; updateAppointment:(id:string, patch:Partial<Appointment>)=>Promise<{ok:boolean;message?:string}>; deleteAppointment:(id:string)=>void; saveService:(s:Service)=>Promise<{ok:boolean;message?:string}>; deleteService:(id:string)=>void; saveHours:(h:WorkingDay[])=>Promise<{ok:boolean;message?:string}>; addBlocked:(b:Omit<BlockedTime,'id'>)=>Promise<{ok:boolean;message?:string}>; removeBlocked:(id:string)=>void; updateBusiness:(patch:Partial<Pick<AgendaData,'businessName'|'phone'|'slug'>>)=>Promise<{ok:boolean;message?:string}> };
 const Ctx = createContext<ContextValue | null>(null);
 
 type ServiceRow={id:string;name:string;duration_minutes:number;price_clp:number;active:boolean};
@@ -167,24 +167,39 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
    setData(d=>({...d,services:d.services.filter(s=>s.id!==id)}));
    if(businessId)void createClient().from('services').delete().eq('id',id).eq('business_id',businessId).then(({error})=>{if(error)console.error(error)});
   },
-  saveHours:(h)=>{
+  saveHours:async(h)=>{
+   if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
+   if(h.some(day=>day.enabled&&(!day.open||!day.close||day.open>=day.close)))return {ok:false,message:'En cada día activo, la hora de cierre debe ser posterior a la apertura.'};
+   const rows=h.map(day=>({business_id:businessId,weekday:dayNames.indexOf(day.day.toLowerCase()),opens_at:day.open,closes_at:day.close,enabled:day.enabled}));
+   const {error}=await createClient().from('working_hours').upsert(rows,{onConflict:'business_id,weekday'});
+   if(error)return {ok:false,message:error.message};
    setData(d=>({...d,hours:h}));
-   if(businessId){
-    const rows=h.map(day=>({business_id:businessId,weekday:dayNames.indexOf(day.day.toLowerCase()),opens_at:day.open,closes_at:day.close,enabled:day.enabled}));
-    void createClient().from('working_hours').upsert(rows,{onConflict:'business_id,weekday'}).then(({error})=>{if(error)console.error(error)});
-   }
+   return {ok:true};
   },
-  addBlocked:(b)=>{
-   const local={...b,id:`local-${Date.now()}`};setData(d=>({...d,blocked:[...d.blocked,local]}));
-   if(businessId)void createClient().from('blocked_times').insert({business_id:businessId,starts_at:toIso(b.date,b.start),ends_at:toIso(b.date,b.end),reason:b.reason}).select('*').single().then(({data:row,error})=>{if(error){console.error(error);return}if(row){const start=fromIso(row.starts_at),end=fromIso(row.ends_at);setData(d=>({...d,blocked:d.blocked.map(x=>x.id===local.id?{id:row.id,date:start.date,start:start.time,end:end.time,reason:row.reason}:x)}))}});
+  addBlocked:async(b)=>{
+   if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
+   if(!b.date||b.start>=b.end)return {ok:false,message:'Revisa la fecha y el rango del bloqueo.'};
+   const start=new Date(`${b.date}T${b.start}:00`).getTime(),end=new Date(`${b.date}T${b.end}:00`).getTime();
+   if(data.appointments.some(a=>a.status!=='cancelled'&&a.date===b.date){
+    const as=new Date(`${a.date}T${a.time}:00`).getTime(),duration=data.services.find(s=>s.id===a.serviceId)?.duration||30;
+    return start<as+duration*60000&&end>as;
+   }))return {ok:false,message:'Ese bloqueo coincide con una reserva existente.'};
+   const {data:row,error}=await createClient().from('blocked_times').insert({business_id:businessId,starts_at:toIso(b.date,b.start),ends_at:toIso(b.date,b.end),reason:b.reason}).select('*').single();
+   if(error||!row)return {ok:false,message:error?.message||'No se pudo guardar el bloqueo.'};
+   const a=fromIso(row.starts_at),z=fromIso(row.ends_at);
+   setData(d=>({...d,blocked:[...d.blocked,{id:row.id,date:a.date,start:a.time,end:z.time,reason:row.reason}]}));
+   return {ok:true};
   },
   removeBlocked:(id)=>{
    setData(d=>({...d,blocked:d.blocked.filter(b=>b.id!==id)}));
    if(businessId)void createClient().from('blocked_times').delete().eq('id',id).eq('business_id',businessId).then(({error})=>{if(error)console.error(error)});
   },
-  updateBusiness:(p)=>{
+  updateBusiness:async(p)=>{
+   if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
+   const {error}=await createClient().from('businesses').update({name:p.businessName,phone:p.phone}).eq('id',businessId);
+   if(error)return {ok:false,message:error.message};
    setData(d=>({...d,...p}));
-   if(businessId)void createClient().from('businesses').update({name:p.businessName,phone:p.phone}).eq('id',businessId).then(({error})=>{if(error)console.error(error)});
+   return {ok:true};
   }
  }),[data,ready,businessId]);
  return <Ctx.Provider value={value}>{children}</Ctx.Provider>
