@@ -4,7 +4,7 @@ import { initialData } from '@/lib/initial-data';
 import { createClient } from '@/lib/supabase/client';
 import type { AgendaData, Appointment, Service, WorkingDay, BlockedTime } from '@/lib/types';
 
-type ContextValue = { data: AgendaData; ready: boolean; addAppointment:(a:Omit<Appointment,'id'>)=>{ok:boolean;message?:string}; updateAppointment:(id:string, patch:Partial<Appointment>)=>{ok:boolean;message?:string}; deleteAppointment:(id:string)=>void; saveService:(s:Service)=>void; deleteService:(id:string)=>void; saveHours:(h:WorkingDay[])=>void; addBlocked:(b:Omit<BlockedTime,'id'>)=>void; removeBlocked:(id:string)=>void; updateBusiness:(patch:Partial<Pick<AgendaData,'businessName'|'phone'|'slug'>>)=>void };
+type ContextValue = { data: AgendaData; ready: boolean; addAppointment:(a:Omit<Appointment,'id'>)=>Promise<{ok:boolean;message?:string}>; updateAppointment:(id:string, patch:Partial<Appointment>)=>Promise<{ok:boolean;message?:string}>; deleteAppointment:(id:string)=>void; saveService:(s:Service)=>Promise<{ok:boolean;message?:string}>; deleteService:(id:string)=>void; saveHours:(h:WorkingDay[])=>void; addBlocked:(b:Omit<BlockedTime,'id'>)=>void; removeBlocked:(id:string)=>void; updateBusiness:(patch:Partial<Pick<AgendaData,'businessName'|'phone'|'slug'>>)=>void };
 const Ctx = createContext<ContextValue | null>(null);
 
 type ServiceRow={id:string;name:string;duration_minutes:number;price_clp:number;active:boolean};
@@ -90,46 +90,78 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
 
  const value=useMemo<ContextValue>(()=>({
   data,ready,
-  addAppointment:(a)=>{
-   const service=data.services.find(s=>s.id===a.serviceId);
-   if(!service)return {ok:false,message:'Selecciona un servicio.'};
-   const optimistic={...a,id:`local-${Date.now()}`};
-   setData(d=>({...d,appointments:[...d.appointments,optimistic]}));
-   if(businessId){
-    void (async()=>{
-     const supabase=createClient();
-     const {data:customer,error:customerError}=await supabase.from('customers').upsert({business_id:businessId,full_name:a.customer.trim(),phone:a.phone.trim()},{onConflict:'business_id,phone'}).select('id').single();
-     if(customerError||!customer){console.error(customerError);setData(d=>({...d,appointments:d.appointments.filter(x=>x.id!==optimistic.id)}));return}
-     const start=toIso(a.date,a.time);
-     const end=new Date(new Date(start).getTime()+service.duration*60000).toISOString();
-     const {data:created,error}=await supabase.from('appointments').insert({business_id:businessId,customer_id:customer.id,service_id:a.serviceId,starts_at:start,ends_at:end,status:a.status,notes:a.notes||null}).select('*,customers(full_name,phone)').single();
-     if(error){console.error(error);setData(d=>({...d,appointments:d.appointments.filter(x=>x.id!==optimistic.id)}));return}
-     setData(d=>({...d,appointments:d.appointments.map(x=>x.id===optimistic.id?{...a,id:created.id}:x)}));
-    })();
-   }
+  addAppointment:async(a)=>{
+   const service=data.services.find(s=>s.id===a.serviceId&&s.active);
+   if(!service)return {ok:false,message:'Selecciona un servicio activo.'};
+   if(!a.customer.trim()||!a.phone.trim())return {ok:false,message:'Completa nombre y teléfono.'};
+   const start=new Date(`${a.date}T${a.time}:00`).getTime();
+   if(!Number.isFinite(start)||start<=Date.now())return {ok:false,message:'La reserva debe ser en una fecha y hora futura.'};
+   const end=start+service.duration*60000;
+   const overlaps=data.appointments.some(x=>{
+    if(x.status==='cancelled')return false;
+    const xs=new Date(`${x.date}T${x.time}:00`).getTime();
+    const xd=data.services.find(s=>s.id===x.serviceId)?.duration||30;
+    return start<xs+xd*60000&&end>xs;
+   });
+   if(overlaps)return {ok:false,message:'Ya existe una reserva que ocupa ese horario. Elige otra hora.'};
+   const blocked=data.blocked.some(b=>b.date===a.date&&a.time<b.end&&new Date(`${a.date}T${a.time}:00`).getTime()+service.duration*60000>new Date(`${b.date}T${b.start}:00`).getTime());
+   if(blocked)return {ok:false,message:'Ese horario está bloqueado.'};
+   if(!businessId)return {ok:false,message:'La agenda todavía se está cargando. Intenta nuevamente.'};
+   const supabase=createClient();
+   const {data:customer,error:customerError}=await supabase.from('customers').upsert({business_id:businessId,full_name:a.customer.trim(),phone:a.phone.trim()},{onConflict:'business_id,phone'}).select('id').single();
+   if(customerError||!customer)return {ok:false,message:customerError?.message||'No se pudo guardar el cliente.'};
+   const startsAt=new Date(`${a.date}T${a.time}:00`).toISOString();
+   const endsAt=new Date(new Date(startsAt).getTime()+service.duration*60000).toISOString();
+   const {data:created,error}=await supabase.from('appointments').insert({business_id:businessId,customer_id:customer.id,service_id:a.serviceId,starts_at:startsAt,ends_at:endsAt,status:a.status,notes:a.notes||null}).select('*,customers(full_name,phone)').single();
+   if(error)return {ok:false,message:error.message.includes('Horario ocupado')?'Ese horario acaba de ser reservado. Elige otro.':error.message};
+   const d=fromIso(created.starts_at);
+   setData(prev=>({...prev,appointments:[...prev.appointments,{...a,id:created.id,date:d.date,time:d.time,customer:created.customers?.full_name||a.customer,phone:created.customers?.phone||a.phone}]}));
    return {ok:true};
   },
-  updateAppointment:(id,patch)=>{
-   setData(d=>({...d,appointments:d.appointments.map(a=>a.id===id?{...a,...patch}:a)}));
-   if(businessId&&patch.status)void createClient().from('appointments').update({status:patch.status}).eq('id',id).eq('business_id',businessId).then(({error})=>{if(error)console.error(error)});
+  updateAppointment:async(id,patch)=>{
+   const current=data.appointments.find(a=>a.id===id);
+   if(!current)return {ok:false,message:'No encontramos esa reserva.'};
+   const next={...current,...patch};
+   if(next.status!=='cancelled'){
+    const service=data.services.find(s=>s.id===next.serviceId);
+    if(!service)return {ok:false,message:'Selecciona un servicio activo.'};
+    const start=new Date(`${next.date}T${next.time}:00`).getTime(),end=start+service.duration*60000;
+    if(!Number.isFinite(start)||start<=Date.now())return {ok:false,message:'La reserva debe quedar en una fecha y hora futura.'};
+    const conflict=data.appointments.some(x=>{
+     if(x.id===id||x.status==='cancelled')return false;
+     const xs=new Date(`${x.date}T${x.time}:00`).getTime(),xd=data.services.find(s=>s.id===x.serviceId)?.duration||30;
+     return start<xs+xd*60000&&end>xs;
+    });
+    if(conflict)return {ok:false,message:'Ese horario ya está ocupado por otra reserva.'};
+   }
+   if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
+   const supabase=createClient();
+   const {data:customer,error:customerError}=await supabase.from('customers').upsert({business_id:businessId,full_name:next.customer.trim(),phone:next.phone.trim()},{onConflict:'business_id,phone'}).select('id').single();
+   if(customerError||!customer)return {ok:false,message:customerError?.message||'No se pudo guardar el cliente.'};
+   const service=data.services.find(s=>s.id===next.serviceId);
+   const startsAt=new Date(`${next.date}T${next.time}:00`).toISOString();
+   const {error}=await supabase.from('appointments').update({customer_id:customer.id,service_id:next.serviceId,starts_at:startsAt,ends_at:new Date(new Date(startsAt).getTime()*(1)+((service?.duration||30)*60000)).toISOString(),status:next.status,notes:next.notes||null}).eq('id',id).eq('business_id',businessId);
+   if(error)return {ok:false,message:error.message};
+   setData(d=>({...d,appointments:d.appointments.map(a=>a.id===id?next:a)}));
    return {ok:true};
   },
   deleteAppointment:(id)=>{
-   setData(d=>({...d,appointments:d.appointments.filter(a=>a.id!==id)}));
-   if(businessId)void createClient().from('appointments').delete().eq('id',id).eq('business_id',businessId).then(({error})=>{if(error)console.error(error)});
+   if(businessId&&!id.startsWith('local-'))void createClient().from('appointments').delete().eq('id',id).eq('business_id',businessId).then(({error})=>{if(error)console.error(error);else setData(d=>({...d,appointments:d.appointments.filter(a=>a.id!==id)}))});
+   else setData(d=>({...d,appointments:d.appointments.filter(a=>a.id!==id)}));
   },
-  saveService:(s)=>{
-   if(!businessId)return;
+  saveService:async(s)=>{
+   if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
+   if(!s.name.trim())return {ok:false,message:'El nombre del servicio es obligatorio.'};
+   if(!Number.isFinite(s.duration)||s.duration<5||!Number.isFinite(s.price)||s.price<0)return {ok:false,message:'Revisa duración y precio.'};
    const supabase=createClient();
-   const payload={business_id:businessId,name:s.name,duration_minutes:s.duration,price_clp:s.price,active:s.active};
-   void (async()=>{
-    const query=!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(s.id)
-      ?await supabase.from('services').insert(payload).select('*').single()
-      :await supabase.from('services').update(payload).eq('id',s.id).eq('business_id',businessId).select('*').single();
-    if(query.error){console.error(query.error);return}
-    const row=query.data;const saved={id:row.id,name:row.name,duration:row.duration_minutes,price:row.price_clp,active:row.active};
-    setData(d=>({...d,services:d.services.some(x=>x.id===s.id)?d.services.map(x=>x.id===s.id?saved:x):[...d.services,saved]}));
-   })();
+   const payload={business_id:businessId,name:s.name.trim(),duration_minutes:s.duration,price_clp:s.price,active:s.active};
+   const query=!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(s.id)
+    ?await supabase.from('services').insert(payload).select('*').single()
+    :await supabase.from('services').update(payload).eq('id',s.id).eq('business_id',businessId).select('*').single();
+   if(query.error||!query.data)return {ok:false,message:query.error?.message||'No se pudo guardar el servicio.'};
+   const row=query.data,saved={id:row.id,name:row.name,duration:row.duration_minutes,price:row.price_clp,active:row.active};
+   setData(d=>({...d,services:d.services.some(x=>x.id===s.id)?d.services.map(x=>x.id===s.id?saved:x):[...d.services,saved]}));
+   return {ok:true};
   },
   deleteService:(id)=>{
    setData(d=>({...d,services:d.services.filter(s=>s.id!==id)}));
