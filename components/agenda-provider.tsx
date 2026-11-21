@@ -4,7 +4,7 @@ import { initialData } from '@/lib/initial-data';
 import { createClient } from '@/lib/supabase/client';
 import type { AgendaData, Appointment, Service, WorkingDay, BlockedTime } from '@/lib/types';
 
-type ContextValue = { data: AgendaData; ready: boolean; loadError:string|null; addAppointment:(a:Omit<Appointment,'id'>)=>Promise<{ok:boolean;message?:string}>; updateAppointment:(id:string, patch:Partial<Appointment>)=>Promise<{ok:boolean;message?:string}>; deleteAppointment:(id:string)=>Promise<{ok:boolean;message?:string}>; saveService:(s:Service)=>Promise<{ok:boolean;message?:string}>; deleteService:(id:string)=>Promise<{ok:boolean;message?:string}>; saveHours:(h:WorkingDay[])=>Promise<{ok:boolean;message?:string}>; addBlocked:(b:Omit<BlockedTime,'id'>)=>Promise<{ok:boolean;message?:string}>; removeBlocked:(id:string)=>void; updateBusiness:(patch:Partial<Pick<AgendaData,'businessName'|'phone'|'slug'>>)=>Promise<{ok:boolean;message?:string}> };
+type ContextValue = { data: AgendaData; ready: boolean; loadError:string|null; addAppointment:(a:Omit<Appointment,'id'>)=>Promise<{ok:boolean;message?:string}>; updateAppointment:(id:string, patch:Partial<Appointment>)=>Promise<{ok:boolean;message?:string}>; deleteAppointment:(id:string)=>Promise<{ok:boolean;message?:string}>; saveService:(s:Service)=>Promise<{ok:boolean;message?:string}>; deleteService:(id:string)=>Promise<{ok:boolean;message?:string}>; saveHours:(h:WorkingDay[])=>Promise<{ok:boolean;message?:string}>; addBlocked:(b:Omit<BlockedTime,'id'>)=>Promise<{ok:boolean;message?:string}>; removeBlocked:(id:string)=>Promise<{ok:boolean;message?:string}>; updateBusiness:(patch:Partial<Pick<AgendaData,'businessName'|'phone'|'slug'>>)=>Promise<{ok:boolean;message?:string}> };
 const Ctx = createContext<ContextValue | null>(null);
 
 type ServiceRow={id:string;name:string;duration_minutes:number;price_clp:number;active:boolean};
@@ -207,9 +207,12 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
    setData(d=>({...d,blocked:[...d.blocked,{id:row.id,date:a.date,start:a.time,end:z.time,reason:row.reason}]}));
    return {ok:true};
   },
-  removeBlocked:(id)=>{
+  removeBlocked:async(id)=>{
+   if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
+   const {error}=await createClient().from('blocked_times').delete().eq('id',id).eq('business_id',businessId);
+   if(error)return {ok:false,message:error.message};
    setData(d=>({...d,blocked:d.blocked.filter(b=>b.id!==id)}));
-   if(businessId)void createClient().from('blocked_times').delete().eq('id',id).eq('business_id',businessId).then(({error})=>{if(error)console.error(error)});
+   return {ok:true};
   },
   updateBusiness:async(p)=>{
    if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
