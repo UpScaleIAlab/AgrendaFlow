@@ -15,7 +15,7 @@ const dayNames=['domingo','lunes','martes','miércoles','jueves','viernes','sáb
 const toIso=(date:string,time:string)=>new Date(`${date}T${time}:00`).toISOString();
 const fromIso=(value:string)=>{const d=new Date(value);return {date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,time:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}};
 export function AgendaProvider({children}:{children:React.ReactNode}) {
- const [data,setData]=useState<AgendaData>(initialData);
+ const [data,setData]=useState<AgendaData>({businessName:'Mi negocio',slug:'',phone:'',services:[],hours:[],appointments:[],blocked:[]});
  const [ready,setReady]=useState(false);
  const [loadError,setLoadError]=useState<string|null>(null);
  const [businessId,setBusinessId]=useState<string|null>(null);
@@ -27,10 +27,10 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     if(active)setLoadError(null);
     const supabase=createClient();
     const {data:{user}}=await supabase.auth.getUser();
-    if(!user){if(active)setReady(true);return}
+    if(!user){if(active){setLoadError('No hay una sesión activa. Inicia sesión nuevamente.');setReady(true)}return}
     const {data:foundBusiness,error:businessError}=await supabase.from('businesses').select('id,name,slug,phone').eq('owner_id',user.id).maybeSingle();
     let business=foundBusiness;
-    if(businessError)throw businessError;
+    if(businessError)throw new Error(`No se pudo consultar el negocio (${businessError.code||'Supabase'}): ${businessError.message}`);
     if(!business){
       const businessName=String(user.user_metadata?.business_name||'Mi negocio').trim()||'Mi negocio';
       const sector=String(user.user_metadata?.sector||'other');
@@ -39,28 +39,28 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
         owner_id:user.id,name:businessName,slug:`${slugBase}-${user.id.replace(/-/g,'').slice(0,6)}`,
         sector,trial_started_at:new Date().toISOString(),trial_ends_at:new Date(Date.now()+7*24*60*60*1000).toISOString()
       },{onConflict:'owner_id'}).select('id,name,slug,phone').single();
-      if(createError)throw createError;
+      if(createError)throw new Error(`No se pudo crear el espacio de trabajo (${createError.code||'Supabase'}): ${createError.message}`);
       business=created;
     }
     if(active)setBusinessId(business.id);
 
-    let {data:serviceRows,error:servicesError}=await supabase.from('services').select('*').eq('business_id',business.id).order('created_at');if(servicesError)throw servicesError;
+    let {data:serviceRows,error:servicesError}=await supabase.from('services').select('*').eq('business_id',business.id).order('created_at');if(servicesError)throw new Error(`Error al cargar servicios (${servicesError.code||'Supabase'}): ${servicesError.message}`);
     if(!serviceRows?.length){
       const seed=initialData.services.map(s=>({business_id:business.id,name:s.name,duration_minutes:s.duration,price_clp:s.price,active:s.active}));
-      const inserted=await supabase.from('services').insert(seed);if(inserted.error)throw inserted.error;
-      const q=await supabase.from('services').select('*').eq('business_id',business.id).order('created_at');if(q.error)throw q.error;serviceRows=q.data
+      const inserted=await supabase.from('services').insert(seed);if(inserted.error)throw new Error(`No se pudieron inicializar los servicios (${inserted.error.code||'Supabase'}): ${inserted.error.message}`);
+      const q=await supabase.from('services').select('*').eq('business_id',business.id).order('created_at');if(q.error)throw new Error(`No se pudieron recuperar los servicios (${q.error.code||'Supabase'}): ${q.error.message}`);serviceRows=q.data
     }
-    let {data:hourRows,error:hoursError}=await supabase.from('working_hours').select('*').eq('business_id',business.id).order('weekday');if(hoursError)throw hoursError;
+    let {data:hourRows,error:hoursError}=await supabase.from('working_hours').select('*').eq('business_id',business.id).order('weekday');if(hoursError)throw new Error(`Error al cargar horarios (${hoursError.code||'Supabase'}): ${hoursError.message}`);
     if(!hourRows?.length){
       const seed=initialData.hours.map(h=>({business_id:business.id,weekday:dayNames.indexOf(h.day.toLowerCase()),opens_at:h.open,closes_at:h.close,enabled:h.enabled}));
-      const inserted=await supabase.from('working_hours').insert(seed);if(inserted.error)throw inserted.error;
-      const q=await supabase.from('working_hours').select('*').eq('business_id',business.id).order('weekday');if(q.error)throw q.error;hourRows=q.data
+      const inserted=await supabase.from('working_hours').insert(seed);if(inserted.error)throw new Error(`No se pudieron inicializar los horarios (${inserted.error.code||'Supabase'}): ${inserted.error.message}`);
+      const q=await supabase.from('working_hours').select('*').eq('business_id',business.id).order('weekday');if(q.error)throw new Error(`No se pudieron recuperar los horarios (${q.error.code||'Supabase'}): ${q.error.message}`);hourRows=q.data
     }
     const [{data:appointmentRows,error:appointmentsError},{data:blockedRows,error:blockedError}]=await Promise.all([
       supabase.from('appointments').select('*,customers(full_name,phone)').eq('business_id',business.id).order('starts_at'),
       supabase.from('blocked_times').select('*').eq('business_id',business.id).order('starts_at')
     ]);
-    if(appointmentsError)throw appointmentsError;if(blockedError)throw blockedError;
+    if(appointmentsError)throw new Error(`Error al cargar reservas (${appointmentsError.code||'Supabase'}): ${appointmentsError.message}`);if(blockedError)throw new Error(`Error al cargar bloqueos (${blockedError.code||'Supabase'}): ${blockedError.message}`);
     const services:Service[]=((serviceRows||[]) as ServiceRow[]).map((s:ServiceRow)=>({id:s.id,name:s.name,duration:s.duration_minutes,price:s.price_clp,active:s.active}));
     const hours:WorkingDay[]=((hourRows||[]) as HoursRow[]).map((h:HoursRow)=>({day:['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][h.weekday],enabled:h.enabled,open:String(h.opens_at).slice(0,5),close:String(h.closes_at).slice(0,5)}));
     const appointments:Appointment[]=((appointmentRows||[]) as AppointmentRow[]).map((a:AppointmentRow)=>{const slot=fromIso(a.starts_at);return{id:a.id,date:slot.date,time:slot.time,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
@@ -69,7 +69,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
       setData({businessName:business.name,slug:business.slug,phone:business.phone||'',services,hours,appointments,blocked});
       setReady(true);
     }
-   }catch(error){console.error('AgendaFlow: no se pudo cargar la agenda desde Supabase',error);if(active){setLoadError(error instanceof Error?error.message:'Error desconocido al cargar datos.');setData(d=>({...d,services:[],hours:[],appointments:[],blocked:[]}));setReady(true)}}
+   }catch(error){console.error('AgendaFlow: no se pudo cargar la agenda desde Supabase',error);if(active){setLoadError(error instanceof Error?error.message:'Error desconocido al cargar datos.');setData(d=>({...d}));setReady(true)}}
   };
   void load();
   return()=>{active=false};
