@@ -6,6 +6,13 @@ alter table public.businesses
   add column if not exists subscription_period_end timestamptz,
   add column if not exists mp_preapproval_id text;
 
+-- Compatibilidad: negocios existentes sin fecha reciben un último periodo de transición de 7 días.
+update public.businesses
+set trial_started_at=coalesce(trial_started_at,now()),
+    trial_ends_at=coalesce(trial_ends_at,now()+interval '7 days'),
+    subscription_status=coalesce(subscription_status,'trial')
+where trial_ends_at is null;
+
 -- El dueño puede consultar su estado para mostrar la pantalla de renovación.
 -- El acceso a datos operativos se valida siempre en PostgreSQL, no solo en la UI.
 create or replace function public.agendaflow_business_access(p_business_id uuid)
@@ -37,7 +44,16 @@ drop policy if exists "owner manages business" on public.businesses;
 create policy "owner reads business" on public.businesses
   for select to authenticated using (owner_id = (select auth.uid()));
 create policy "owner creates business" on public.businesses
-  for insert to authenticated with check (owner_id = (select auth.uid()));
+  for insert to authenticated with check (
+    owner_id = (select auth.uid())
+    and subscription_status = 'trial'
+    and trial_started_at between now()-interval '10 minutes' and now()
+    and trial_ends_at > now()
+    and trial_ends_at <= trial_started_at+interval '7 days'
+    and trial_ends_at <= now()+interval '7 days'
+    and subscription_period_end is null
+    and mp_preapproval_id is null
+  );
 create policy "owner updates business while active" on public.businesses
   for update to authenticated
   using (owner_id = (select auth.uid()) and public.agendaflow_business_access(id))
@@ -77,7 +93,7 @@ set search_path = public
 as $$
 begin
   if coalesce(auth.role(), '') <> 'service_role'
-     and current_user not in ('postgres','supabase_admin') then
+ then
     if new.trial_started_at is distinct from old.trial_started_at
        or new.trial_ends_at is distinct from old.trial_ends_at
        or new.subscription_status is distinct from old.subscription_status
@@ -108,7 +124,7 @@ as $$
 declare v_business_id uuid;
 begin
   if coalesce(auth.role(), '') = 'service_role'
-     or current_user in ('postgres','supabase_admin') then
+ then
     return coalesce(new, old);
   end if;
   v_business_id := coalesce(new.business_id, old.business_id);
