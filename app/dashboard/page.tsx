@@ -17,7 +17,7 @@ export default function DashboardPage(){
  const pending=data.appointments.filter(a=>a.status==='pending').length; const confirmed=data.appointments.filter(a=>a.status==='confirmed').length;
  const openNew=()=>{setEditing(null);setForm(blank(selected));setError('');setModal(true)};
  const openEdit=(a:Appointment)=>{setEditing(a);setForm({...a});setError('');setModal(true)};
- const submit=()=>{if(!form.customer.trim()||!form.phone.trim()||!form.serviceId){setError('Completa nombre, teléfono y servicio.');return}if(editing){updateAppointment(editing.id,form)}else{const r=addAppointment(form);if(!r.ok){setError(r.message||'No se pudo crear la reserva.');return}}setModal(false)};
+ const submit=async()=>{if(!form.customer.trim()||!form.phone.trim()||!form.serviceId){setError('Completa nombre, teléfono y servicio.');return}const result=editing?await updateAppointment(editing.id,form):await addAppointment(form);if(!result.ok){setError(result.message||'No se pudo guardar la reserva.');return}setError('');setModal(false)};
  const shift=(n:number)=>{const d=new Date(`${selected}T12:00:00`);d.setDate(d.getDate()+n);setSelected(localDate(d))};
  const wa=(phone:string,name:string,time:string)=>`https://wa.me/${phone.replace(/\D/g,'')}?text=${encodeURIComponent(`Hola ${name}, te escribimos para recordarte tu hora a las ${time}. ¡Te esperamos!`)}`;
  const share=async()=>{const url=`${window.location.origin}/reservar/${data.slug}`;try{await navigator.clipboard.writeText(url);setCopied(true);setTimeout(()=>setCopied(false),1800)}catch{window.prompt('Copia tu enlace de reservas:',url)}};
