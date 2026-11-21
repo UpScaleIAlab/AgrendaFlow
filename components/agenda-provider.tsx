@@ -26,7 +26,8 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     const supabase=createClient();
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){if(active)setReady(true);return}
-    let {data:business,error:businessError}=await supabase.from('businesses').select('id,name,slug,phone').eq('owner_id',user.id).maybeSingle();
+    const {data:foundBusiness,error:businessError}=await supabase.from('businesses').select('id,name,slug,phone').eq('owner_id',user.id).maybeSingle();
+    let business=foundBusiness;
     if(businessError)throw businessError;
     if(!business){
       const businessName=String(user.user_metadata?.business_name||'Mi negocio').trim()||'Mi negocio';
