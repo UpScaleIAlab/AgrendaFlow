@@ -27,7 +27,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     if(active)setLoadError(null);
     const supabase=createClient();
     const {data:{user}}=await supabase.auth.getUser();
-    if(!user){if(active){setLoadError('No hay una sesión activa. Inicia sesión nuevamente.');setReady(true)}return}
+    if(!user){if(active){setBusinessId(null);setData({businessName:'Mi negocio',slug:'',phone:'',services:[],hours:[],appointments:[],blocked:[]});setLoadError(null);setReady(true)}return}
     const {data:foundBusiness,error:businessError}=await supabase.from('businesses').select('id,name,slug,phone').eq('owner_id',user.id).maybeSingle();
     let business=foundBusiness;
     if(businessError)throw new Error(`No se pudo consultar el negocio (${businessError.code||'Supabase'}): ${businessError.message}`);
@@ -67,8 +67,21 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     }
    }catch(error){console.error('AgendaFlow: no se pudo cargar la agenda desde Supabase',error);if(active){setLoadError(error instanceof Error?error.message:'Error desconocido al cargar datos.');setData(d=>({...d}));setReady(true)}}
   };
+  const authClient=createClient();
+  const {data:{subscription}}=authClient.auth.onAuthStateChange((event,session)=>{
+   if(event==='SIGNED_IN'&&session?.user){
+    setReady(false);
+    window.setTimeout(()=>{void load()},0);
+   }
+   if(event==='SIGNED_OUT'){
+    setBusinessId(null);
+    setData({businessName:'Mi negocio',slug:'',phone:'',services:[],hours:[],appointments:[],blocked:[]});
+    setLoadError(null);
+    setReady(true);
+   }
+  });
   void load();
-  return()=>{active=false};
+  return()=>{active=false;subscription.unsubscribe()};
  },[]);
 
  useEffect(()=>{
