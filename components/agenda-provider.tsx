@@ -119,8 +119,8 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     return start<xs+xd*60000&&end>xs;
    });
    if(overlaps)return {ok:false,message:'Ya existe una reserva que ocupa ese horario. Elige otra hora.'};
-   const blocked=data.blocked.some(b=>b.date===a.date&&a.time<b.end&&new Date(`${a.date}T${a.time}:00`).getTime()+service.duration*60000>new Date(`${b.date}T${b.start}:00`).getTime());
-   if(blocked)return {ok:false,message:'Ese horario está bloqueado.'};
+   const blocked=data.blocked.find(b=>b.date===a.date&&a.time<b.end&&new Date(`${a.date}T${a.time}:00`).getTime()+service.duration*60000>new Date(`${b.date}T${b.start}:00`).getTime());
+   if(blocked)return {ok:false,message:`Ese horario está bloqueado${blocked.reason?.trim()?` por: ${blocked.reason.trim()}`:'.'}`};
    if(!businessId)return {ok:false,message:'La agenda todavía se está cargando. Intenta nuevamente.'};
    const supabase=createClient();
    const {data:customer,error:customerError}=await supabase.from('customers').upsert({business_id:businessId,full_name:a.customer.trim(),phone:a.phone.trim()},{onConflict:'business_id,phone'}).select('id').single();
@@ -145,7 +145,8 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     const weekday=dayNames[new Date(`${next.date}T12:00:00`).getDay()],day=data.hours.find(h=>h.day.toLowerCase()===weekday);
     const endTime=new Date(end).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});
     if(!day?.enabled||next.time<day.open||endTime>day.close)return {ok:false,message:'La reserva queda fuera del horario de atención.'};
-    if(data.blocked.some(b=>b.date===next.date&&next.time<b.end&&end>new Date(`${b.date}T${b.start}:00`).getTime()))return {ok:false,message:'Ese horario está bloqueado.'};
+    const blocked=data.blocked.find(b=>b.date===next.date&&next.time<b.end&&end>new Date(`${b.date}T${b.start}:00`).getTime());
+    if(blocked)return {ok:false,message:`Ese horario está bloqueado${blocked.reason?.trim()?` por: ${blocked.reason.trim()}`:'.'}`};
     const conflict=data.appointments.some(x=>{
      if(x.id===id||x.status==='cancelled')return false;
      const xs=new Date(`${x.date}T${x.time}:00`).getTime(),xd=data.services.find(s=>s.id===x.serviceId)?.duration||30;
