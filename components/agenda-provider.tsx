@@ -97,6 +97,9 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
    const start=new Date(`${a.date}T${a.time}:00`).getTime();
    if(!Number.isFinite(start)||start<=Date.now())return {ok:false,message:'La reserva debe ser en una fecha y hora futura.'};
    const end=start+service.duration*60000;
+   const weekday=dayNames[new Date(`${a.date}T12:00:00`).getDay()];
+   const day=data.hours.find(h=>h.day.toLowerCase()===weekday);
+   if(!day?.enabled||a.time<day.open||new Date(end).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false})>day.close)return {ok:false,message:'La reserva queda fuera del horario de atención.'};
    const overlaps=data.appointments.some(x=>{
     if(x.status==='cancelled')return false;
     const xs=new Date(`${x.date}T${x.time}:00`).getTime();
