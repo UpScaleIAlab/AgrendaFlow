@@ -92,8 +92,7 @@ security definer
 set search_path = public
 as $$
 begin
-  if coalesce(auth.role(), '') <> 'service_role'
- then
+  if coalesce(auth.role(), '') <> 'service_role' then
     if new.trial_started_at is distinct from old.trial_started_at
        or new.trial_ends_at is distinct from old.trial_ends_at
        or new.subscription_status is distinct from old.subscription_status
@@ -123,9 +122,8 @@ set search_path = public
 as $$
 declare v_business_id uuid;
 begin
-  if coalesce(auth.role(), '') = 'service_role'
- then
-    return coalesce(new, old);
+  if coalesce(auth.role(), '') = 'service_role' then
+    if tg_op = 'DELETE' then return old; else return new; end if;
   end if;
   v_business_id := coalesce(new.business_id, old.business_id);
   if not exists (
@@ -137,9 +135,9 @@ begin
     raise exception 'La prueba de AgendaFlow terminó. Activa tu suscripción para continuar.'
       using errcode = '42501';
   end if;
-  return coalesce(new, old);
+  if tg_op = 'DELETE' then return old; else return new; end if;
 end;
-$$;
+$;
 
 drop trigger if exists agendaflow_gate_services on public.services;
 create trigger agendaflow_gate_services before insert or update or delete on public.services
