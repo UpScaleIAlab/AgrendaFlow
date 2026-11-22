@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { CalendarDays, LockKeyhole, MessageCircle, LogOut } from 'lucide-react';
 
 export default function ExpiredAccountPage() {
+  const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const logout = async () => {
@@ -17,7 +19,7 @@ export default function ExpiredAccountPage() {
       setBusy(false);
       return;
     }
-    window.location.href = '/login';
+    router.push('/login');
   };
 
   return <main className="grid min-h-screen place-items-center bg-[#F5F7F4] p-5">
