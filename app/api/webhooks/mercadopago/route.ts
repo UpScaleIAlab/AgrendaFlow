@@ -6,6 +6,18 @@ export const runtime = 'nodejs';
 
 const MP_API = 'https://api.mercadopago.com';
 
+type MercadoPagoSubscription = {
+  id?: string | number;
+  external_reference?: string;
+  status?: string;
+  auto_recurring?: { next_payment_date?: string };
+};
+
+type MercadoPagoAuthorizedPayment = {
+  preapproval_id?: string | number;
+  status?: string;
+};
+
 function validSignature(signature: string | null, requestId: string | null, dataId: string, secret: string) {
   if (!signature || !requestId || !dataId) return false;
   const parts = Object.fromEntries(
@@ -58,22 +70,22 @@ export async function POST(request: Request) {
   if (!dataId) return NextResponse.json({ received: true });
 
   try {
-    let subscription: any;
+    let subscription: MercadoPagoSubscription;
 
     if (topic === 'subscription_authorized_payment') {
-      const payment = await getMpResource(`/authorized_payments/${encodeURIComponent(dataId)}`, token);
+      const payment = await getMpResource(`/authorized_payments/${encodeURIComponent(dataId)}`, token) as MercadoPagoAuthorizedPayment;
       if (!payment.preapproval_id) return NextResponse.json({ received: true });
       subscription = await getMpResource(
         `/preapproval/${encodeURIComponent(String(payment.preapproval_id))}`,
         token
-      );
+      ) as MercadoPagoSubscription;
       if (payment.status === 'approved' || payment.status === 'authorized') {
         subscription.status = 'authorized';
       } else if (['rejected', 'cancelled'].includes(payment.status)) {
         subscription.status = 'past_due';
       }
     } else if (topic === 'subscription_preapproval' || topic === 'preapproval') {
-      subscription = await getMpResource(`/preapproval/${encodeURIComponent(dataId)}`, token);
+      subscription = await getMpResource(`/preapproval/${encodeURIComponent(dataId)}`, token) as MercadoPagoSubscription;
     } else {
       // Ignore unrelated Mercado Pago events.
       return NextResponse.json({ received: true });
