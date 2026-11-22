@@ -49,9 +49,9 @@ export default function ExpiredAccountPage() {
       <p className="mt-3 text-sm leading-6 text-[#718087]">Tus datos se conservan. Para volver a gestionar reservas, activa tu suscripción mensual de AgendaFlow.</p>
       <div className="mt-5 rounded-xl bg-[#DCEBE6] p-4 text-left">
         <p className="text-sm font-semibold text-[#24514E]">$9.990 CLP / mes</p>
-        <p className="mt-1 text-xs text-[#718087]">Activa tu suscripción segura y recupera el acceso a tu agenda.</p>
+        <p className="mt-1 text-xs text-[#718087]">Activa tu suscripción mensual para recuperar el acceso a tu agenda.</p>
       </div>
-      <button onClick={startPayment} disabled={paymentBusy} className="btn-primary mt-5 w-full"><CreditCard size={15}/> {paymentBusy ? 'Conectando con Mercado Pago...' : 'Activar suscripción'}</button>
+      <button onClick={startPayment} disabled={paymentBusy} className="btn-primary mt-5 w-full"><CreditCard size={15}/> {paymentBusy ? 'Abriendo Mercado Pago...' : 'Activar suscripción'}</button>
       <button onClick={logout} disabled={busy} className="btn-secondary mt-3 w-full"><LogOut size={14}/>{busy ? 'Cerrando sesión...' : 'Cerrar sesión'}</button>
       {error && <p role="alert" className="mt-3 text-xs text-[#a45f52]">{error}</p>}
       <Link href="/" className="mt-5 inline-block text-xs text-[#718087] underline">Volver a AgendaFlow</Link>
