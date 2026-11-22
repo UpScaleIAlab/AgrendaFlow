@@ -63,9 +63,28 @@ export async function POST() {
     }
   }
 
-  // In Preview, set this to the Mercado Pago test buyer email.
-  // Leave it unset in Production so real customers use their own account email.
-  const payerEmail = process.env.MERCADOPAGO_TEST_PAYER_EMAIL?.trim() || user.email;
+  // For sandbox tests, prefer the buyer test-account User ID and resolve its
+  // Mercado Pago email through the API. Test-account usernames are not emails.
+  const testPayerId = process.env.MERCADOPAGO_TEST_PAYER_ID?.trim();
+  let payerEmail = process.env.MERCADOPAGO_TEST_PAYER_EMAIL?.trim() || user.email;
+
+  if (testPayerId) {
+    const payerResponse = await fetch(
+      `${MP_API}/users/${encodeURIComponent(testPayerId)}`,
+      { headers: { Authorization: `Bearer ${accessToken}` }, cache: 'no-store' }
+    );
+    const payer = await payerResponse.json().catch(() => null);
+
+    if (!payerResponse.ok || typeof payer?.email !== 'string' || !payer.email.includes('@')) {
+      console.error('Could not resolve Mercado Pago test buyer from configured User ID.');
+      return NextResponse.json(
+        { error: 'No pudimos validar la cuenta compradora de prueba de Mercado Pago. Revisa el User ID configurado.' },
+        { status: 502 }
+      );
+    }
+
+    payerEmail = payer.email;
+  }
 
   const response = await fetch(`${MP_API}/preapproval`, {
     method: 'POST',
