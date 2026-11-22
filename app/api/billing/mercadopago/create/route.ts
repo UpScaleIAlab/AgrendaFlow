@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { createClient as createSupabaseAdmin } from '@supabase/supabase-js';
 
 export const runtime = 'nodejs';
 
@@ -84,7 +85,15 @@ export async function POST() {
   }
 
   // The browser cannot update this protected column; only this server route can.
-  const { error: updateError } = await supabase
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) {
+    return NextResponse.json({ error: 'Falta configurar la credencial privada de Supabase.' }, { status: 503 });
+  }
+  const admin = createSupabaseAdmin(supabaseUrl, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { error: updateError } = await admin
     .from('businesses')
     .update({ mp_preapproval_id: String(result.id) })
     .eq('id', business.id)
