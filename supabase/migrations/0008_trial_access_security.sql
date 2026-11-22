@@ -137,7 +137,7 @@ begin
   end if;
   if tg_op = 'DELETE' then return old; else return new; end if;
 end;
-$;
+$$;
 
 drop trigger if exists agendaflow_gate_services on public.services;
 create trigger agendaflow_gate_services before insert or update or delete on public.services
