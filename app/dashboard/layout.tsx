@@ -9,19 +9,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: business } = await supabase
     .from('businesses')
-    .select('name,slug,phone,trial_ends_at,subscription_status,subscription_period_end')
+    .select('id,name,slug,phone,trial_ends_at,subscription_status,subscription_period_end')
     .eq('owner_id', user.id)
     .maybeSingle();
 
   if (business) {
-    const trialValid = business.subscription_status === 'trial'
-      && business.trial_ends_at
-      && new Date(business.trial_ends_at).getTime() > Date.now();
-    const subscriptionValid = business.subscription_status === 'active'
-      && business.subscription_period_end
-      && new Date(business.subscription_period_end).getTime() > Date.now();
-
-    if (!trialValid && !subscriptionValid) redirect('/cuenta-expirada');
+    // La base de datos calcula el vencimiento; no dependemos del reloj del navegador.
+    const { data: hasAccess, error } = await supabase.rpc(
+      'agendaflow_business_access',
+      { p_business_id: business.id }
+    );
+    if (error || !hasAccess) redirect('/cuenta-expirada');
   }
 
   return <>{business && <BusinessInitializer business={business} />}{children}</>;
