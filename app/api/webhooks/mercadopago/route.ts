@@ -81,7 +81,7 @@ export async function POST(request: Request) {
       ) as MercadoPagoSubscription;
       if (payment.status === 'approved' || payment.status === 'authorized') {
         subscription.status = 'authorized';
-      } else if (['rejected', 'cancelled'].includes(payment.status)) {
+      } else if (payment.status && ['rejected', 'cancelled'].includes(payment.status)) {
         subscription.status = 'past_due';
       }
     } else if (topic === 'subscription_preapproval' || topic === 'preapproval') {
