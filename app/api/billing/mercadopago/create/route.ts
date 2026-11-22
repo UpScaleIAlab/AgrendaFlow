@@ -18,6 +18,16 @@ export async function POST() {
     );
   }
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceKey) {
+    return NextResponse.json(
+      { error: 'Falta configurar la credencial privada de Supabase.' },
+      { status: 503 }
+    );
+  }
+
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -85,11 +95,6 @@ export async function POST() {
   }
 
   // The browser cannot update this protected column; only this server route can.
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceKey) {
-    return NextResponse.json({ error: 'Falta configurar la credencial privada de Supabase.' }, { status: 503 });
-  }
   const admin = createSupabaseAdmin(supabaseUrl, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
