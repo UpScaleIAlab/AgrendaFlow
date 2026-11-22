@@ -4,13 +4,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { CalendarDays, LockKeyhole, CreditCard, LogOut } from 'lucide-react';
+import { CalendarDays, LockKeyhole, CreditCard, LogOut, MessageCircle } from 'lucide-react';
 
 export default function ExpiredAccountPage() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [paymentBusy, setPaymentBusy] = useState(false);
+  const whatsappNumber = process.env.NEXT_PUBLIC_AGENDAFLOW_WHATSAPP?.replace(/[^0-9]/g, '') ?? '';
+  const whatsappMessage = encodeURIComponent('Hola, tengo dudas sobre la activación de mi suscripción a AgendaFlow.');
   const startPayment = async () => {
     setPaymentBusy(true);
     setError('');
@@ -52,6 +54,7 @@ export default function ExpiredAccountPage() {
         <p className="mt-1 text-xs text-[#718087]">Activa tu suscripción mensual para recuperar el acceso a tu agenda.</p>
       </div>
       <button onClick={startPayment} disabled={paymentBusy} className="btn-primary mt-5 w-full"><CreditCard size={15}/> {paymentBusy ? 'Abriendo Mercado Pago...' : 'Activar suscripción'}</button>
+      {whatsappNumber && <a href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`} target="_blank" rel="noopener noreferrer" className="btn-secondary mt-3 w-full"><MessageCircle size={15}/> ¿Tienes dudas? Escríbenos por WhatsApp</a>}
       <button onClick={logout} disabled={busy} className="btn-secondary mt-3 w-full"><LogOut size={14}/>{busy ? 'Cerrando sesión...' : 'Cerrar sesión'}</button>
       {error && <p role="alert" className="mt-3 text-xs text-[#a45f52]">{error}</p>}
       <Link href="/" className="mt-5 inline-block text-xs text-[#718087] underline">Volver a AgendaFlow</Link>
