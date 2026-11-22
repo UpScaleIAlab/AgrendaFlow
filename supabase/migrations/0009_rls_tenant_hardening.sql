@@ -11,6 +11,14 @@ begin;
 revoke create on schema public from public, anon, authenticated;
 grant usage on schema public to anon, authenticated;
 
+-- Ensure row-level security remains enabled on every tenant table.
+alter table public.businesses enable row level security;
+alter table public.services enable row level security;
+alter table public.working_hours enable row level security;
+alter table public.customers enable row level security;
+alter table public.appointments enable row level security;
+alter table public.blocked_times enable row level security;
+
 -- Remove all policies on the tenant-owned tables, regardless of legacy name.
 do $$
 declare
