@@ -101,17 +101,25 @@ export async function POST(request: Request) {
           : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString())
         : null;
 
-      const { error } = await admin
+      const { data: linkedBusiness, error: lookupError } = await admin
         .from('businesses')
-        .update({
-          subscription_status: subscriptionStatus,
-          subscription_period_end: periodEnd,
-          mp_preapproval_id: subscriptionId,
-        })
+        .select('mp_preapproval_id')
         .eq('id', businessId)
-        .eq('mp_preapproval_id', subscriptionId);
-
-      if (error) throw error;
+        .maybeSingle();
+      if (lookupError) throw lookupError;
+      // The webhook may arrive before the checkout route stores the subscription ID.
+      // Accept a blank link once, but never replace a different existing subscription.
+      if (linkedBusiness && (!linkedBusiness.mp_preapproval_id || linkedBusiness.mp_preapproval_id === subscriptionId)) {
+        const { error } = await admin
+          .from('businesses')
+          .update({
+            subscription_status: subscriptionStatus,
+            subscription_period_end: periodEnd,
+            mp_preapproval_id: subscriptionId,
+          })
+          .eq('id', businessId);
+        if (error) throw error;
+      }
     }
 
     return NextResponse.json({ received: true });
