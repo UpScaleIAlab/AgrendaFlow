@@ -8,7 +8,7 @@ begin;
 
 -- Prevent API roles from creating objects in public that could shadow objects
 -- referenced by SECURITY DEFINER routines.
-revoke create on schema public from anon, authenticated;
+revoke create on schema public from public, anon, authenticated;
 grant usage on schema public to anon, authenticated;
 
 -- Remove all policies on the tenant-owned tables, regardless of legacy name.
