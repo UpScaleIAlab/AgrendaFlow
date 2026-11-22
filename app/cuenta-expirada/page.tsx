@@ -4,12 +4,30 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { CalendarDays, LockKeyhole, MessageCircle, LogOut } from 'lucide-react';
+import { CalendarDays, LockKeyhole, CreditCard, LogOut } from 'lucide-react';
 
 export default function ExpiredAccountPage() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [paymentBusy, setPaymentBusy] = useState(false);
+  const startPayment = async () => {
+    setPaymentBusy(true);
+    setError('');
+    try {
+      const response = await fetch('/api/billing/mercadopago/create', { method: 'POST' });
+      const result = await response.json();
+      if (!response.ok || !result.checkoutUrl) {
+        setError(result.error || 'No pudimos iniciar el pago. Intenta nuevamente.');
+        setPaymentBusy(false);
+        return;
+      }
+      window.location.assign(result.checkoutUrl);
+    } catch {
+      setError('No pudimos conectar con Mercado Pago. Revisa tu conexión e intenta nuevamente.');
+      setPaymentBusy(false);
+    }
+  };
   const logout = async () => {
     setBusy(true);
     setError('');
@@ -31,9 +49,9 @@ export default function ExpiredAccountPage() {
       <p className="mt-3 text-sm leading-6 text-[#718087]">Tus datos se conservan. Para volver a gestionar reservas, activa tu suscripción mensual de AgendaFlow.</p>
       <div className="mt-5 rounded-xl bg-[#DCEBE6] p-4 text-left">
         <p className="text-sm font-semibold text-[#24514E]">$9.990 CLP / mes</p>
-        <p className="mt-1 text-xs text-[#718087]">La renovación y el pago online se habilitarán en la siguiente etapa.</p>
+        <p className="mt-1 text-xs text-[#718087]">Activa tu suscripción segura y recupera el acceso a tu agenda.</p>
       </div>
-      <a href="https://wa.me/56979060279?text=Hola%2C%20mi%20prueba%20de%20AgendaFlow%20termin%C3%B3%20y%20quiero%20consultar%20por%20la%20activaci%C3%B3n." target="_blank" rel="noreferrer" className="btn-primary mt-5 w-full"><MessageCircle size={15}/> Consultar activación</a>
+      <button onClick={startPayment} disabled={paymentBusy} className="btn-primary mt-5 w-full"><CreditCard size={15}/> {paymentBusy ? 'Conectando con Mercado Pago...' : 'Activar suscripción'}</button>
       <button onClick={logout} disabled={busy} className="btn-secondary mt-3 w-full"><LogOut size={14}/>{busy ? 'Cerrando sesión...' : 'Cerrar sesión'}</button>
       {error && <p role="alert" className="mt-3 text-xs text-[#a45f52]">{error}</p>}
       <Link href="/" className="mt-5 inline-block text-xs text-[#718087] underline">Volver a AgendaFlow</Link>
