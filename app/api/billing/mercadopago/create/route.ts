@@ -69,6 +69,30 @@ export async function POST() {
   let payerEmail = process.env.MERCADOPAGO_TEST_PAYER_EMAIL?.trim() || user.email;
 
   if (testPayerId) {
+    // Identify the collector (seller) tied to the configured Access Token.
+    // Log IDs only; never log the credential or account email.
+    const collectorResponse = await fetch(`${MP_API}/users/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: 'no-store',
+    });
+    const collector = await collectorResponse.json().catch(() => null);
+
+    if (!collectorResponse.ok || !collector?.id) {
+      console.error('Mercado Pago seller identity check failed:', {
+        httpStatus: collectorResponse.status,
+      });
+      return NextResponse.json(
+        { error: 'No pudimos identificar la cuenta vendedora de Mercado Pago con el token configurado.' },
+        { status: 502 }
+      );
+    }
+
+    console.info('Mercado Pago test account IDs:', {
+      collectorId: String(collector.id),
+      configuredPayerId: testPayerId,
+      idsAreDifferent: String(collector.id) !== testPayerId,
+    });
+
     const payerResponse = await fetch(
       `${MP_API}/users/${encodeURIComponent(testPayerId)}`,
       { headers: { Authorization: `Bearer ${accessToken}` }, cache: 'no-store' }
