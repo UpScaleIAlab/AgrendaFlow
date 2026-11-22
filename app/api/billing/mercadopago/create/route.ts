@@ -63,6 +63,10 @@ export async function POST() {
     }
   }
 
+  // In Preview, set this to the Mercado Pago test buyer email.
+  // Leave it unset in Production so real customers use their own account email.
+  const payerEmail = process.env.MERCADOPAGO_TEST_PAYER_EMAIL?.trim() || user.email;
+
   const response = await fetch(`${MP_API}/preapproval`, {
     method: 'POST',
     headers: {
@@ -72,7 +76,7 @@ export async function POST() {
     body: JSON.stringify({
       reason: `AgendaFlow - Suscripción mensual - ${business.name}`,
       external_reference: business.id,
-      payer_email: user.email,
+      payer_email: payerEmail,
       back_url: `${siteUrl}/pago/resultado`,
       notification_url: `${siteUrl}/api/webhooks/mercadopago`,
       auto_recurring: {
