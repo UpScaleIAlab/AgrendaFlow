@@ -54,7 +54,7 @@ export default function CustomersPage() {
       ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`
       : nextAppointment.date;
     const message = encodeURIComponent(
-      `Hola ${customer.name}, te recordamos tu reserva en ${data.businessName}: ${serviceName(nextAppointment.serviceId)}, el ${readableDate} a las ${nextAppointment.time}. ¡Te esperamos!`
+      `Hola ${customer.name}, te recordamos tu reserva en ${data.businessName}. Servicio: ${serviceName(nextAppointment.serviceId)}, el día ${readableDate} a las ${nextAppointment.time}. ¡Te esperamos!`
     );
     return `https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${message}`;
   };
