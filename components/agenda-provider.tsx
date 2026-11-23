@@ -33,7 +33,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     if(businessError)throw new Error(`No se pudo consultar el negocio (${businessError.code||'Supabase'}): ${businessError.message}`);
     if(!business){
       const businessName=String(user.user_metadata?.business_name||'Mi negocio').trim()||'Mi negocio';
-      const sector=String(user.user_metadata?.sector||'other');
+      const sector=String(user.user_metadata?.sector||'independent');
       const slugBase=businessName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'negocio';
       const {data:created,error:createError}=await supabase.from('businesses').upsert({
         owner_id:user.id,name:businessName,slug:`${slugBase}-${user.id.replace(/-/g,'').slice(0,6)}`,
