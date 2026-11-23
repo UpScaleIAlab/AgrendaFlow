@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { CheckCircle2, CalendarDays, ArrowUpRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { BrandLogo } from '@/components/brand-logo';
 
 export default function EmailVerifiedPage() {
-  const params = useSearchParams();
   const [status, setStatus] = useState<'checking'|'success'|'error'>('checking');
   const [message, setMessage] = useState('Estamos confirmando tu correo de forma segura.');
 
@@ -16,6 +14,7 @@ export default function EmailVerifiedPage() {
     let active = true;
     const verify = async () => {
       const supabase = createClient();
+      const params = new URLSearchParams(window.location.search);
       const code = params.get('code');
       const errorDescription = params.get('error_description') || params.get('error');
       if (errorDescription) {
@@ -46,7 +45,7 @@ export default function EmailVerifiedPage() {
     };
     void verify();
     return () => { active = false; };
-  }, [params]);
+  }, []);
 
   return <main className="grid min-h-screen place-items-center bg-[#F5F7F4] p-4 sm:p-6">
     <section className="panel w-full max-w-md p-6 text-center sm:p-9">
