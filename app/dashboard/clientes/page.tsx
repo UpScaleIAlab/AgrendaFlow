@@ -63,12 +63,12 @@ export default function CustomersPage() {
     <AppShell>
       <div className="mb-8">
         <div className="eyebrow">Personas que atiendes</div>
-        <h1 className="mt-2 text-[32px] font-semibold tracking-[-.045em]">Mis clientes</h1>
+        <h1 className="mt-2 text-2xl font-semibold tracking-[-.045em] sm:text-[32px]">Mis clientes</h1>
         <p className="mt-2 text-[13px] text-[#718087]">Datos básicos e historial de sus reservas.</p>
       </div>
 
       <div className="mb-5 grid gap-3 sm:grid-cols-2">
-        <div className="panel flex items-center gap-4 p-4">
+        <div className="panel flex items-center gap-3 p-3 sm:gap-4 sm:p-4">
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#DCEBE6] text-[#397D78]"><Users size={18} /></div>
           <div><div className="text-[23px] font-semibold">{customers.length}</div><div className="text-[10px] text-[#718087]">Clientes registrados</div></div>
         </div>
@@ -79,11 +79,11 @@ export default function CustomersPage() {
       </div>
 
       <section className="panel overflow-hidden">
-        <div className="border-b border-[#E2E9E5] px-5 py-4"><h2 className="text-[13px] font-semibold">Historial de clientes</h2></div>
+        <div className="border-b border-[#E2E9E5] px-3 py-4 sm:px-5"><h2 className="text-[13px] font-semibold">Historial de clientes</h2></div>
         {customers.length ? customers.map((customer) => {
           const link = reminderLink(customer);
           return (
-            <div key={customer.phone} className="grid gap-3 border-b border-[#E2E9E5] px-5 py-5 last:border-0 sm:grid-cols-[1fr_auto] sm:items-center">
+            <div key={customer.phone} className="grid min-w-0 gap-3 border-b border-[#E2E9E5] px-3 py-4 last:border-0 sm:grid-cols-[1fr_auto] sm:items-center sm:px-5 sm:py-5">
               <div>
                 <div className="text-[13px] font-semibold">{customer.name}</div>
                 <div className="mt-1 text-[10px] text-[#718087]">{customer.phone} · {customer.count} {customer.count === 1 ? 'reserva' : 'reservas'} · Última visita: {customer.lastDate}</div>
