@@ -13,7 +13,7 @@ export default function ExpiredAccountPage() {
   const [paymentBusy, setPaymentBusy] = useState(false);
   // Keep the support button visible even if the Preview environment variable is missing.
   const whatsappNumber = (process.env.NEXT_PUBLIC_AGENDAFLOW_WHATSAPP || '56979060279').replace(/[^0-9]/g, '');
-  const whatsappMessage = encodeURIComponent('Hola, tengo dudas sobre la activación de mi suscripción a AgendaFlow.');
+  const whatsappMessage = encodeURIComponent('Hola, tengo dudas sobre la activación de mi suscripción a FlowAgenda.');
   const startPayment = async () => {
     setPaymentBusy(true);
     setError('');
@@ -49,7 +49,7 @@ export default function ExpiredAccountPage() {
       <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full bg-[#f5eddd] text-[#a38a60]"><LockKeyhole size={22}/></div>
       <p className="eyebrow">Periodo de prueba finalizado</p>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight">Tu agenda está pausada</h1>
-      <p className="mt-3 text-sm leading-6 text-[#718087]">Tus datos se conservan. Para volver a gestionar reservas, activa tu suscripción mensual de AgendaFlow.</p>
+      <p className="mt-3 text-sm leading-6 text-[#718087]">Tus datos se conservan. Para volver a gestionar reservas, activa tu suscripción mensual de FlowAgenda.</p>
       <div className="mt-5 rounded-xl bg-[#DCEBE6] p-4 text-left">
         <p className="text-sm font-semibold text-[#24514E]">$9.990 CLP / mes</p>
         <p className="mt-1 text-xs text-[#718087]">Activa tu suscripción mensual para recuperar el acceso a tu agenda.</p>
@@ -58,7 +58,7 @@ export default function ExpiredAccountPage() {
       <a href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`} target="_blank" rel="noopener noreferrer" className="btn-secondary mt-3 w-full"><MessageCircle size={15}/> ¿Tienes dudas? Escríbenos por WhatsApp</a>
       <button onClick={logout} disabled={busy} className="btn-secondary mt-3 w-full"><LogOut size={14}/>{busy ? 'Cerrando sesión...' : 'Cerrar sesión'}</button>
       {error && <p role="alert" className="mt-3 text-xs text-[#a45f52]">{error}</p>}
-      <Link href="/" className="mt-5 inline-block text-xs text-[#718087] underline">Volver a AgendaFlow</Link>
+      <Link href="/" className="mt-5 inline-block text-xs text-[#718087] underline">Volver a FlowAgenda</Link>
     </section>
   </main>;
 }
