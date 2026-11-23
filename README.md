@@ -1,6 +1,6 @@
-# AgendaFlow — Microapp de agenda
+# FlowAgenda by FM Digital — Microapp de agenda
 
-AgendaFlow organiza las reservas de un emprendimiento sin complicaciones.
+FlowAgenda, desarrollado por FM Digital, organiza las reservas de un emprendimiento sin complicaciones.
 
 ## Funciones
 - Agenda diaria y semanal.
@@ -16,7 +16,7 @@ AgendaFlow organiza las reservas de un emprendimiento sin complicaciones.
 - Demo interactiva con datos ficticios.
 
 ## Estado de esta entrega
-El registro y login se conectan a Supabase Auth. Los nuevos registros crean un negocio con rubro y fechas de prueba de 7 días. La agenda autenticada carga y sincroniza servicios, horarios, bloqueos y reservas con Supabase. El formulario público obtiene los servicios y la disponibilidad mediante una función RPC que no expone datos personales. La creación de reservas públicas utiliza una función transaccional que valida horarios, bloqueos y solapamientos, y guarda el cliente y la reserva. El panel actualiza las reservas periódicamente.
+El registro y login se conectan a Supabase Auth. Los nuevos registros crean un negocio con rubro y fechas de prueba de 15 días. La agenda autenticada carga y sincroniza servicios, horarios, bloqueos y reservas con Supabase. El formulario público obtiene los servicios y la disponibilidad mediante una función RPC que no expone datos personales. La creación de reservas públicas utiliza una función transaccional que valida horarios, bloqueos y solapamientos, y guarda el cliente y la reserva. El panel actualiza las reservas periódicamente.
 
 La demo interactiva usa datos ficticios en el navegador y no modifica cuentas reales. La migración 0008 aplica el vencimiento de prueba en RLS y en operaciones de base de datos; el panel redirige a una pantalla de cuenta pausada. La suscripción de pago y el webhook de Mercado Pago todavía no están integrados. Antes de producción aún deben probarse RLS y el flujo completo con dos cuentas/dispositivos distintos, además de revisar los ajustes de Auth, CAPTCHA, copias de seguridad y despliegue.
 
@@ -32,6 +32,9 @@ La demo interactiva usa datos ficticios en el navegador y no modifica cuentas re
    - `0006_booking_lock_consistency.sql`
    - `0007_authenticated_table_permissions.sql`
    - `0008_trial_access_security.sql`
+   - `0009_rls_tenant_hardening.sql`
+   - `0009_trial_period_fifteen_days.sql`
+   - `0010_trial_signup_fifteen_days.sql`
 4. En Authentication > URL Configuration configura la URL local y la de producción.
 5. Ejecuta `npm install` y `npm run dev`.
 
