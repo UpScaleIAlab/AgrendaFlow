@@ -33,7 +33,6 @@ const translations: Record<string, string> = {
   'Compartir enlace':'Share link','Enlace copiado':'Link copied','Organiza tus horas y mantén todo bajo control.':'Organize your appointments and keep everything under control.',
   'Nombre del cliente':'Customer name','Teléfono':'Phone','Servicio':'Service','Fecha':'Date','Hora':'Time',
   'Notas (opcional)':'Notes (optional)','Pendiente':'Pending','Confirmada':'Confirmed','Completada':'Completed','Cancelada':'Cancelled',
-  'Reservas del día':'Today’s bookings','Sin reservas':'No bookings','Nombre del negocio':'Business name',
   'WhatsApp (con código de país)':'WhatsApp (with country code)','Guardar datos':'Save details','Guardado':'Saved'
 };
 type LanguageContextValue = { language: Language; setLanguage: (language: Language) => void; t: (text: string) => string };
