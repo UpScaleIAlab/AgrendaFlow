@@ -105,6 +105,6 @@ export default function BookingPage(){
     <button onClick={()=>void loadAvailability()} className="w-full text-center text-[10px] text-[#718087] underline">Actualizar horarios disponibles</button>
     <p className="text-center text-[10px] text-[#a09d94]">Tu reserva quedará pendiente hasta que el negocio la confirme.</p>
    </div>}
-  </section><p className="mt-5 text-center text-[10px] text-[#a09d94]">AgendaFlow · Reservas simples</p>
+  </section><p className="mt-5 text-center text-[10px] text-[#a09d94]">FlowAgenda by FM Digital · Reservas simples</p>
  </div></main>
 }
