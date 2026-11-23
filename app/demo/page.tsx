@@ -63,7 +63,7 @@ export default function DemoPage() {
       <Link href="/" className="mb-8 inline-flex items-center gap-2 text-xs font-semibold text-[#397D78]"><ArrowLeft size={14}/> Volver al inicio</Link>
       <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
         <div className="max-w-2xl"><div className="eyebrow">Demo interactiva · datos de ejemplo</div><h1 className="mt-3 text-[38px] font-semibold leading-tight tracking-[-.05em] md:text-[50px]">Prueba cómo se organiza tu agenda.</h1><p className="mt-4 text-sm leading-6 text-[#718087]">Cambia de rubro, revisa las horas, agrega una reserva ficticia y confirma o elimina citas. Todo ocurre en esta demostración, sin crear datos reales.</p></div>
-        <Link href="/registro" className="btn-primary shrink-0">Comenzar demo por 7 días <ArrowUpRight size={14}/></Link>
+        <Link href="/registro" className="btn-primary shrink-0">Comenzar demo por 15 días <ArrowUpRight size={14}/></Link>
       </div>
 
       <section className="panel mt-8 overflow-hidden">
@@ -88,7 +88,7 @@ export default function DemoPage() {
           </div>
         </div>
       </section>
-      <div className="mt-6 flex flex-col items-start justify-between gap-4 rounded-2xl bg-[#DCEBE6] p-6 sm:flex-row sm:items-center"><div><div className="text-sm font-semibold text-[#172B3A]">¿Listo para configurar tu propio negocio?</div><p className="mt-1 text-xs text-[#4E6C6A]">Crea tu cuenta y comienza tu demo de 7 días.</p></div><Link href="/registro" className="btn-primary">Comenzar demo por 7 días <ArrowUpRight size={14}/></Link></div>
+      <div className="mt-6 flex flex-col items-start justify-between gap-4 rounded-2xl bg-[#DCEBE6] p-6 sm:flex-row sm:items-center"><div><div className="text-sm font-semibold text-[#172B3A]">¿Listo para configurar tu propio negocio?</div><p className="mt-1 text-xs text-[#4E6C6A]">Crea tu cuenta y comienza tu demo de 15 días.</p></div><Link href="/registro" className="btn-primary">Comenzar demo por 15 días <ArrowUpRight size={14}/></Link></div>
     </div>
   </main>;
 }
