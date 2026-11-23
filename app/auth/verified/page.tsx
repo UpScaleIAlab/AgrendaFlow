@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { CheckCircle2, CalendarDays, ArrowUpRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { BrandLogo } from '@/components/brand-logo';
+import type { EmailOtpType } from '@supabase/supabase-js';
 
 export default function EmailVerifiedPage() {
   const [status, setStatus] = useState<'checking'|'success'|'error'>('checking');
@@ -12,38 +13,83 @@ export default function EmailVerifiedPage() {
 
   useEffect(() => {
     let active = true;
+
     const verify = async () => {
       const supabase = createClient();
       const params = new URLSearchParams(window.location.search);
       const code = params.get('code');
+      const tokenHash = params.get('token_hash');
+      const rawType = params.get('type');
       const errorDescription = params.get('error_description') || params.get('error');
+
       if (errorDescription) {
         if (active) {
           setStatus('error');
-          setMessage('El enlace no pudo completarse. Puede haber vencido o ya haber sido utilizado. Intenta iniciar sesión o solicita otro correo de verificación.');
+          setMessage('El enlace no pudo completarse. Puede haber vencido o ya haber sido utilizado. Solicita otro correo de verificación e inténtalo nuevamente.');
         }
         return;
       }
-      if (code) {
+
+      if (tokenHash) {
+        const allowedTypes: EmailOtpType[] = ['email', 'signup', 'invite', 'magiclink', 'recovery', 'email_change'];
+        const otpType = allowedTypes.includes(rawType as EmailOtpType)
+          ? (rawType as EmailOtpType)
+          : 'email';
+
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: otpType,
+        });
+
+        if (error) {
+          if (active) {
+            setStatus('error');
+            setMessage('No pudimos validar este enlace. Puede haber vencido o ya haber sido utilizado. Solicita uno nuevo desde el acceso a tu cuenta.');
+          }
+          return;
+        }
+      } else if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) {
           const { data: { user } } = await supabase.auth.getUser();
           if (!user?.email_confirmed_at) {
-            if (active) { setStatus('error'); setMessage('No pudimos completar la verificación. Solicita un nuevo enlace y vuelve a intentarlo.'); }
+            if (active) {
+              setStatus('error');
+              setMessage('No pudimos completar la verificación. Solicita un nuevo enlace y vuelve a intentarlo.');
+            }
             return;
           }
         }
+      } else {
+        const { data: { user }, error } = await supabase.auth.getUser();
+        if (error || !user?.email_confirmed_at) {
+          if (active) {
+            setStatus('error');
+            setMessage('El enlace no contiene un código de verificación válido. Abre el enlace más reciente que recibiste por correo.');
+          }
+          return;
+        }
       }
+
       const { data: { user }, error } = await supabase.auth.getUser();
       if (active) {
-        if (!error && user?.email_confirmed_at) setStatus('success');
-        else {
+        if (!error && user?.email_confirmed_at) {
+          setStatus('success');
+          setMessage('Tu correo quedó confirmado correctamente.');
+        } else {
           setStatus('error');
-          setMessage('No pudimos confirmar el estado de tu correo. Prueba iniciar sesión; si tu cuenta sigue sin verificar, solicita un nuevo enlace.');
+          setMessage('La verificación se procesó, pero no pudimos consultar el estado de tu cuenta. Intenta iniciar sesión para comprobarla.');
         }
       }
     };
-    void verify();
+
+    void verify().catch(() => {
+      if (active) {
+        setStatus('error');
+        setMessage('Ocurrió un problema al verificar tu correo. Intenta abrir nuevamente el enlace o solicita otro.');
+      }
+    });
+
     return () => { active = false; };
   }, []);
 
