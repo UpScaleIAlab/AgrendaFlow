@@ -11,7 +11,6 @@ const translations: Record<string, string> = {
   'Cargando tu agenda y datos guardados...':'Loading your calendar and saved data...',
   'No pudimos cargar todos los datos':'We couldn’t load all your data','Reintentar':'Try again',
   'Idioma':'Language','Español':'Spanish','Inglés':'English',
-  'Mi agenda':'My calendar','Tu espacio de trabajo':'Your workspace',
   'Mis servicios':'My services','Configuración básica':'Basic settings',
   'Define qué ofreces y cuánto tiempo ocupa cada atención.':'Define what you offer and how long each appointment takes.',
   'Agregar servicio':'Add service','Servicios registrados':'Services added','Disponibles para reservar':'Available for booking',
