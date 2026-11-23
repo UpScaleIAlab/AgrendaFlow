@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { CheckCircle2, CalendarDays, ArrowUpRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { BrandLogo } from '@/components/brand-logo';
@@ -10,8 +11,16 @@ import type { EmailOtpType } from '@supabase/supabase-js';
 type VerificationStatus = 'checking' | 'success' | 'error';
 
 export default function EmailVerifiedPage() {
+  const router = useRouter();
   const [status, setStatus] = useState<VerificationStatus>('checking');
   const [message, setMessage] = useState('Estamos confirmando tu correo de forma segura.');
+
+  useEffect(() => {
+    if (status === 'success') {
+      const redirectTimer = window.setTimeout(() => router.replace('/login?verified=1'), 1800);
+      return () => window.clearTimeout(redirectTimer);
+    }
+  }, [status, router]);
 
   useEffect(() => {
     let active = true;
@@ -158,10 +167,10 @@ export default function EmailVerifiedPage() {
             <p className="eyebrow">Correo verificado</p>
             <h1 className="mt-2 text-2xl font-semibold">¡Gracias por verificar tu cuenta!</h1>
             <p className="mt-3 text-sm leading-6 text-[#718087]">
-              Tu correo quedó confirmado correctamente. Ahora puedes iniciar sesión y comenzar a configurar tu agenda.
+              Tu correo quedó confirmado correctamente. Te llevaremos al inicio de sesión para que ingreses a FlowAgenda.
             </p>
-            <Link href="/login" className="btn-primary mt-6 w-full">
-              Iniciar sesión <ArrowUpRight size={15} />
+            <Link href="/login?verified=1" className="btn-primary mt-6 w-full">
+              Ir a iniciar sesión <ArrowUpRight size={15} />
             </Link>
           </>
         ) : (
