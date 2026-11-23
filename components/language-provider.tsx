@@ -28,7 +28,7 @@ const translations: Record<string, string> = {
   'Todavía no tienes servicios. Agrega el primero para recibir reservas.':'You don’t have any services yet. Add your first one to start receiving bookings.',
   'Guardar servicio':'Save service','Guardar':'Save','Cancelar':'Cancel','Eliminar':'Delete',
   'Tu día está despejado':'Your day is clear','No tienes reservas para esta fecha.':'You have no bookings on this date.',
-  'Reservas del día':'Today’s bookings','Confirmadas':'Confirmed','Por confirmar':'Pending confirmation',
+  'Reservas del día':'Today’s bookings','Sin reservas':'No bookings','Confirmadas':'Confirmed','Por confirmar':'Pending confirmation',
   'Volver a hoy':'Back to today','Día':'Day','Semana':'Week','Nueva reserva':'New booking',
   'Compartir enlace':'Share link','Enlace copiado':'Link copied','Organiza tus horas y mantén todo bajo control.':'Organize your appointments and keep everything under control.',
   'Nombre del cliente':'Customer name','Teléfono':'Phone','Servicio':'Service','Fecha':'Date','Hora':'Time',
