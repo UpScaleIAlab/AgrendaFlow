@@ -85,3 +85,15 @@
 .theme-dark .status-completed{background:#2c3b3c;color:#c9d9d6}
 .theme-dark .status-cancelled{background:#4a302f;color:#f0c0b7}
 @media(max-width:639px){.theme-choice{min-height:32px;padding:6px 7px}.theme-switcher{gap:1px}}
+
+
+/* Improve appointment-history legibility in dark mode. */
+.theme-dark [class*="bg-[#f4f1e9]"]{background:#293d47!important;color:#e4edf0!important;border:1px solid #3b515c}
+.theme-dark [class*="text-[#77766e]"]{color:#d0dce1!important}
+.theme-dark [class*="text-[#96948b]"],.theme-dark [class*="text-[#96948b]"]{color:#aebdc5!important}
+.theme-dark [class*="text-[#718087]"]{color:#b7c5cc!important}
+.theme-dark [class*="text-[#397D78]"]{color:#8fd0c1!important}
+.theme-dark [class*="border-[#E2E9E5]"]{border-color:#344a55!important}
+.theme-dark a[target="_blank"][href^="https://wa.me/"]{background:#203b39!important;border-color:#3a625b!important;color:#bfe8d9!important}
+.theme-dark .panel{color:#e8f0f2}
+.theme-dark input,.theme-dark select,.theme-dark textarea{background:#14232d;color:#e8f0f2;border-color:#344b57}
