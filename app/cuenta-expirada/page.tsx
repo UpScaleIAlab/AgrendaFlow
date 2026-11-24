@@ -52,7 +52,7 @@ export default function ExpiredAccountPage() {
       <p className="mt-3 text-sm leading-6 text-[#718087]">Tus datos se conservan. Para volver a gestionar reservas, activa tu suscripción mensual de FlowAgenda.</p>
       <div className="mt-5 rounded-xl bg-[#DCEBE6] p-4 text-left">
         <p className="text-sm font-semibold text-[#24514E]">$9.990 CLP / mes</p>
-        <p className="mt-1 text-xs text-[#718087]">Activa tu suscripción mensual para recuperar el acceso a tu agenda.</p>
+        <p className="mt-1 text-xs text-[#718087]">Activa tu suscripción mensual de $9.990 CLP para recuperar el acceso. El cobro se renueva automáticamente cada mes mediante Mercado Pago; no es manual. Puedes cancelar y evitar futuras renovaciones.</p>
       </div>
       <button onClick={startPayment} disabled={paymentBusy} className="btn-primary mt-5 w-full"><CreditCard size={15}/> {paymentBusy ? 'Abriendo Mercado Pago...' : 'Activar suscripción'}</button>
       <a href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`} target="_blank" rel="noopener noreferrer" className="btn-secondary mt-3 w-full"><MessageCircle size={15}/> ¿Tienes dudas? Escríbenos por WhatsApp</a>
