@@ -109,3 +109,9 @@
 .theme-dark .hero-glow:before{
  background:radial-gradient(ellipse at 78% 45%,rgba(57,125,120,.14),transparent 42%),radial-gradient(ellipse at 8% 10%,rgba(57,125,120,.10),transparent 34%)!important;
 }
+
+
+/* Expired-trial price panel: readable and harmonious in dark mode. */
+.theme-dark .expired-price-card{background:#243b42!important;border:1px solid #3c5b62;color:#e7f0f2}
+.theme-dark .expired-price-title{color:#a5dfd1!important}
+.theme-dark .expired-price-description{color:#c2d2da!important}
