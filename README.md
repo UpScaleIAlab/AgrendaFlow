@@ -1,6 +1,6 @@
-# AgendaFlow — Microapp de agenda
+# FM Digital Growth — Microapp de agenda
 
-AgendaFlow organiza las reservas de un emprendimiento sin complicaciones.
+FM Digital Growth organiza las reservas de un emprendimiento sin complicaciones.
 
 ## Funciones
 - Agenda diaria y semanal.
