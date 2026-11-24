@@ -94,7 +94,7 @@ export default function CustomersPage() {
                     .map((appointment) => (
                       <span key={appointment.id} className="rounded-lg bg-[#f4f1e9] px-2.5 py-2 text-[9px] leading-4 text-[#77766e]">
                         <span className="block font-semibold">{serviceName(appointment.serviceId)}</span>
-                        <span>{appointment.date} · {appointment.time} · {appointmentStatus(appointment.status)}</span>
+                        <span>{appointment.date} · {appointment.time} · {appointmentStatus(appointment.status)}{appointment.notes&&<span className="mt-1 block max-w-[360px] whitespace-normal text-[#397D78]">Nota interna: {appointment.notes}</span>}</span>
                       </span>
                     ))}
                 </div>
