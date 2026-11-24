@@ -1,6 +1,6 @@
-# FlowAgenda by FM Digital — Microapp de agenda
+# FM Digital Growth — Agenda online profesional
 
-FlowAgenda, desarrollado por FM Digital, organiza las reservas de un emprendimiento sin complicaciones.
+FM Digital Growth, desarrollado por FM Digital, ofrece una agenda profesional para negocios que quieren crecer.
 
 ## Funciones
 - Agenda diaria y semanal.
