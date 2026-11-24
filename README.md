@@ -1,6 +1,6 @@
-# AgendaFlow — Microapp de agenda
+# FM Digital Growth — Agenda online profesional
 
-AgendaFlow tiene un objetivo: **organizar las reservas de un emprendimiento sin complicaciones**.
+FM Digital Growth tiene un objetivo: **organizar las reservas de un emprendimiento sin complicaciones**.
 
 ## Qué trae esta versión
 - Agenda con vista diaria y semanal.
@@ -37,7 +37,7 @@ npm run dev
 Abre http://localhost:3000.
 
 ## Rutas
-- `/` — presentación de AgendaFlow.
+- `/` — presentación de FM Digital Growth.
 - `/dashboard` — agenda diaria y semanal.
 - `/dashboard/servicios` — servicios, duración y precio.
 - `/dashboard/horarios` — jornada semanal, bloqueos y datos del negocio.
