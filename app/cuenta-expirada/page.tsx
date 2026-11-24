@@ -12,7 +12,7 @@ export default function ExpiredAccountPage() {
   const [error, setError] = useState('');
   const [paymentBusy, setPaymentBusy] = useState(false);
   // Keep the support button visible even if the Preview environment variable is missing.
-  const whatsappNumber = (process.env.NEXT_PUBLIC_FMDIGITALGROWTH_WHATSAPP || '56979060279').replace(/[^0-9]/g, '');
+  const whatsappNumber = (process.env.NEXT_PUBLIC_AGENDAFLOW_WHATSAPP || '56979060279').replace(/[^0-9]/g, '');
   const whatsappMessage = encodeURIComponent('Hola, tengo dudas sobre la activación de mi suscripción a FM Digital Growth.');
   const startPayment = async () => {
     setPaymentBusy(true);
