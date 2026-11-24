@@ -35,12 +35,15 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
       const businessName=String(user.user_metadata?.business_name||'Mi negocio').trim()||'Mi negocio';
       const sector=String(user.user_metadata?.sector||'independent');
       const slugBase=businessName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'negocio';
-      const {data:created,error:createError}=await supabase.from('businesses').upsert({
-        owner_id:user.id,name:businessName,slug:`${slugBase}-${user.id.replace(/-/g,'').slice(0,6)}`,
-        sector,trial_started_at:new Date().toISOString(),trial_ends_at:new Date(Date.now()+15*24*60*60*1000).toISOString()
-      },{onConflict:'owner_id'}).select('id,name,slug,phone').single();
-      if(createError)throw new Error(`No se pudo crear el espacio de trabajo (${createError.code||'Supabase'}): ${createError.message}`);
-      business=created;
+      const businessPayload={owner_id:user.id,name:businessName,slug:slugBase,
+        sector,trial_started_at:new Date().toISOString(),trial_ends_at:new Date(Date.now()+15*24*60*60*1000).toISOString()};
+      let creation=await supabase.from('businesses').upsert(businessPayload,{onConflict:'owner_id'}).select('id,name,slug,phone').single();
+      // Si el nombre ya está ocupado, agregamos un sufijo corto para conservar unicidad.
+      if(creation.error?.code==='23505'){
+        creation=await supabase.from('businesses').upsert({...businessPayload,slug:`${slugBase}-${user.id.replace(/-/g,'').slice(0,4)}`},{onConflict:'owner_id'}).select('id,name,slug,phone').single();
+      }
+      if(creation.error)throw new Error(`No se pudo crear el espacio de trabajo (${creation.error.code||'Supabase'}): ${creation.error.message}`);
+      business=creation.data;
     }
     if(active)setBusinessId(business.id);
 
