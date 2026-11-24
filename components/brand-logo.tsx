@@ -14,7 +14,7 @@ export function BrandLogo({ variant = 'dark', className = '', compact = false, r
   const symbol = light ? '/agenda-flow-symbol-light.svg' : '/agenda-flow-symbol.svg';
 
   return (
-    <span className={`inline-flex items-center gap-2.5 ${className}`} role="img" aria-label="FlowAgenda by FM Digital">
+    <span className={`inline-flex items-center gap-2.5 ${className}`} role="img" aria-label="FM Digital Growth">
       <Image
         src={symbol}
         alt=""
@@ -26,10 +26,10 @@ export function BrandLogo({ variant = 'dark', className = '', compact = false, r
       />
       <span className="flex min-w-0 flex-col">
         <span className={`whitespace-nowrap font-bold tracking-[-.045em] ${compact ? 'text-[17px]' : responsive ? 'text-[clamp(18px,4.5vw,30px)] sm:text-[36px]' : 'text-[30px] sm:text-[36px]'} ${mainColor}`}>
-          Flow<span className={accentColor}>Agenda</span>
+          FM <span className={accentColor}>Digital Growth</span>
         </span>
         <span className={`mt-0.5 font-semibold tracking-[.08em] ${compact ? 'text-[8px]' : responsive ? 'text-[9px] sm:text-[10px] tracking-[.12em]' : 'text-[10px] tracking-[.12em]'} ${light ? 'text-white/65' : 'text-[#718087]'}`}>
-          by FM Digital
+          Agenda online
         </span>
       </span>
     </span>
