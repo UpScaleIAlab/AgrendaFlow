@@ -29,7 +29,7 @@ export function BrandLogo({ variant = 'dark', className = '', compact = false, r
           FM <span className={accentColor}>Digital Growth</span>
         </span>
         <span className={`mt-0.5 font-semibold tracking-[.08em] ${compact ? 'text-[8px]' : responsive ? 'text-[9px] sm:text-[10px] tracking-[.12em]' : 'text-[10px] tracking-[.12em]'} ${light ? 'text-white/65' : 'text-[#718087]'}`}>
-          Agenda online
+          by FM Digital
         </span>
       </span>
     </span>
