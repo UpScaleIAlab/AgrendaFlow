@@ -21,7 +21,7 @@ where slug is distinct from 'legacy-'||replace(id::text,'-','');
 with normalized as (
   select id,
     coalesce(nullif(trim(both '-' from regexp_replace(
-      lower(unaccent(name)), '[^a-z0-9]+', '-', 'g'
+      translate(lower(name),'áéíóúüñ','aeiouun'), '[^a-z0-9]+', '-', 'g'
     )),''),'negocio') as base
   from public.businesses
 ), ranked as (
