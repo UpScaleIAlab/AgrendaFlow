@@ -97,3 +97,8 @@
 .theme-dark a[target="_blank"][href^="https://wa.me/"]{background:#203b39!important;border-color:#3a625b!important;color:#bfe8d9!important}
 .theme-dark .panel{color:#e8f0f2}
 .theme-dark input,.theme-dark select,.theme-dark textarea{background:#14232d;color:#e8f0f2;border-color:#344b57}
+
+
+/* Accessible animated headline word: keep the same luminous brand green in dark mode. */
+.theme-dark .hero-motion-word,
+.theme-dark .hero-motion-word span{color:#8FD0C1!important;text-shadow:0 0 1px rgba(143,208,193,.12)}
