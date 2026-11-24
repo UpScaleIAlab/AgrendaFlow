@@ -167,7 +167,7 @@ export default function EmailVerifiedPage() {
             <p className="eyebrow">Correo verificado</p>
             <h1 className="mt-2 text-2xl font-semibold">¡Gracias por verificar tu cuenta!</h1>
             <p className="mt-3 text-sm leading-6 text-[#718087]">
-              Tu correo quedó confirmado correctamente. Te llevaremos al inicio de sesión para que ingreses a FlowAgenda.
+              Tu correo quedó confirmado correctamente. Te llevaremos al inicio de sesión para que ingreses a FM Digital Growth.
             </p>
             <Link href="/login?verified=1" className="btn-primary mt-6 w-full">
               Ir a iniciar sesión <ArrowUpRight size={15} />
