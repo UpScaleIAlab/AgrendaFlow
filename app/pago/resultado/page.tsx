@@ -8,7 +8,7 @@ export default function PaymentResultPage() {
         <p className="eyebrow">Mercado Pago</p>
         <h1 className="mt-2 text-2xl font-semibold tracking-tight">Estamos confirmando tu suscripción</h1>
         <p className="mt-3 text-sm leading-6 text-[#718087]">
-          Mercado Pago está procesando la información. FlowAgenda habilitará tu cuenta cuando reciba y valide la confirmación del pago.
+          Mercado Pago está procesando la información. FM Digital Growth habilitará tu cuenta cuando reciba y valide la confirmación del pago.
         </p>
         <p className="mt-4 text-xs text-[#718087]">
           Si tu agenda aún aparece pausada, espera unos segundos y vuelve a comprobar el acceso.
