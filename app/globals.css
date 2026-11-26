@@ -124,3 +124,54 @@
 .theme-dark .booking-public .booking-slot[aria-pressed="true"]{background:#397d78!important;border-color:#78c8b9!important;color:#fff!important}
 .theme-dark .booking-public input::placeholder,.theme-dark .booking-public textarea::placeholder{color:#a9bbc4!important;opacity:1}
 .theme-dark .booking-public select option{background:#14232d;color:#e8f0f2}
+
+
+/* Booking page: dark-theme contrast fixes, including the success/confirmation card. */
+.theme-dark .booking-public .bg\\[\\#DCEBE6\\]{
+  background:#263f49!important;
+  color:#e8f0f2!important;
+}
+.theme-dark .booking-public [class*="bg-[#DCEBE6]"]{
+  background:#263f49!important;
+  color:#e8f0f2!important;
+}
+.theme-dark .booking-public [class*="text-[#718087]"],
+.theme-dark .booking-public [class*="text-[#99968d]"],
+.theme-dark .booking-public [class*="text-[#99968d]"]{
+  color:#b9cbd3!important;
+}
+.theme-dark .booking-public [class*="text-[#24514E]"]{
+  color:#a9e0d2!important;
+}
+.theme-dark .booking-public [class*="text-[#6d6b62]"]{
+  color:#d6e2e7!important;
+}
+.theme-dark .booking-public .booking-hint{
+  background:#263f49!important;
+  color:#b9cbd3!important;
+}
+.theme-dark .booking-public .booking-slot{
+  background:#172a35!important;
+  border-color:#405965!important;
+  color:#e5eef2!important;
+}
+.theme-dark .booking-public .booking-slot:hover{
+  border-color:#78bfb0!important;
+  background:#203b45!important;
+}
+.theme-dark .booking-public .field{
+  background:#14232d!important;
+  color:#e8f0f2!important;
+  border-color:#405965!important;
+}
+.theme-dark .booking-public .field::placeholder{
+  color:#a8bbc5!important;
+  opacity:1;
+}
+.theme-dark .booking-public .border-[#E2E9E5]{
+  border-color:#405965!important;
+}
+.theme-dark .booking-public .btn-primary{
+  background:#284a5b!important;
+  color:#fff!important;
+}
