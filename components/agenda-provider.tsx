@@ -78,7 +78,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
    }
    if(event==='SIGNED_OUT'){
     setBusinessId(null);
-    setData({businessName:'Mi negocio',slug:'',phone:'',services:[],hours:[],appointments:[],blocked:[]});
+    setData({businessName:'Mi negocio',slug:'',phone:'',sector:'independent',services:[],hours:[],appointments:[],blocked:[]});
     setLoadError(null);
     setReady(true);
    }
