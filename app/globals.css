@@ -115,3 +115,12 @@
 .theme-dark .expired-price-card{background:#243b42!important;border:1px solid #3c5b62;color:#e7f0f2}
 .theme-dark .expired-price-title{color:#a5dfd1!important}
 .theme-dark .expired-price-description{color:#c2d2da!important}
+
+
+/* Public reservation form: accessible contrast in dark appearance */
+.theme-dark .booking-public .booking-hint{background:#263d48!important;color:#d1e0e5!important;border:1px solid #405965}
+.theme-dark .booking-public .booking-slot{background:#1b2b36!important;border-color:#405965!important;color:#e8f0f2!important}
+.theme-dark .booking-public .booking-slot:hover{background:#263d48!important;border-color:#72bdb0!important;color:#fff!important}
+.theme-dark .booking-public .booking-slot[aria-pressed="true"]{background:#397d78!important;border-color:#78c8b9!important;color:#fff!important}
+.theme-dark .booking-public input::placeholder,.theme-dark .booking-public textarea::placeholder{color:#a9bbc4!important;opacity:1}
+.theme-dark .booking-public select option{background:#14232d;color:#e8f0f2}
