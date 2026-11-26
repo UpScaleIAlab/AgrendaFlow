@@ -27,7 +27,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     if(active)setLoadError(null);
     const supabase=createClient();
     const {data:{user}}=await supabase.auth.getUser();
-    if(!user){if(active){setBusinessId(null);setData({businessName:'Mi negocio',slug:'',phone:'',services:[],hours:[],appointments:[],blocked:[]});setLoadError(null);setReady(true)}return}
+    if(!user){if(active){setBusinessId(null);setData({businessName:'Mi negocio',slug:'',phone:'',sector:'independent',services:[],hours:[],appointments:[],blocked:[]});setLoadError(null);setReady(true)}return}
     const {data:foundBusiness,error:businessError}=await supabase.from('businesses').select('id,name,slug,phone,sector').eq('owner_id',user.id).maybeSingle();
     let business=foundBusiness;
     if(businessError)throw new Error(`No se pudo consultar el negocio (${businessError.code||'Supabase'}): ${businessError.message}`);
@@ -40,7 +40,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
       let creation=await supabase.from('businesses').upsert(businessPayload,{onConflict:'owner_id'}).select('id,name,slug,phone,sector').single();
       // Si el nombre ya está ocupado, agregamos un sufijo corto para conservar unicidad.
       if(creation.error?.code==='23505'){
-        creation=await supabase.from('businesses').upsert({...businessPayload,slug:`${slugBase}-${user.id.replace(/-/g,'').slice(0,4)}`},{onConflict:'owner_id'}).select('id,name,slug,phone').single();
+        creation=await supabase.from('businesses').upsert({...businessPayload,slug:`${slugBase}-${user.id.replace(/-/g,'').slice(0,4)}`},{onConflict:'owner_id'}).select('id,name,slug,phone,sector').single();
       }
       if(creation.error)throw new Error(`No se pudo crear el espacio de trabajo (${creation.error.code||'Supabase'}): ${creation.error.message}`);
       business=creation.data;
@@ -92,10 +92,10 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
   let active=true;
   const refreshAppointments=async()=>{
    const supabase=createClient();
-   const {data:rows,error}=await supabase.from('appointments').select('*,customers(full_name,phone)').eq('business_id',businessId).order('starts_at');
+   const {data:rows,error}=await supabase.from('appointments').select('*,customers(full_name,phone,rut)').eq('business_id',businessId).order('starts_at');
    if(error){console.error('No se pudieron actualizar las reservas',error);return}
    if(!active)return;
-   const appointments:Appointment[]=((rows||[]) as AppointmentRow[]).map((a:AppointmentRow)=>{const d=new Date(a.starts_at);return{id:a.id,date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,time:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
+   const appointments:Appointment[]=((rows||[]) as AppointmentRow[]).map((a:AppointmentRow)=>{const d=new Date(a.starts_at);return{id:a.id,date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,time:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',customerRut:a.customers?.rut||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
    setData(d=>({...d,appointments}));
   };
   const timer=window.setInterval(()=>void refreshAppointments(),12000);
