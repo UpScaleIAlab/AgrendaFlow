@@ -63,6 +63,7 @@ export default function BookingPage(){
  },[service,hours,publicData,date]);
 
  const submit=async()=>{
+  if(!publicData){setError('No se pudo cargar la información del negocio. Actualiza la página e inténtalo nuevamente.');return}
   if(!service||!time||!name.trim()||!phone.trim()||(publicData?.business.sector==='health'&&!rut.trim())){setError('Completa tus datos y selecciona una hora disponible.');return}
   setError('');setSubmitting(true);
   try{
