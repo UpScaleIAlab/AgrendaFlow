@@ -9,7 +9,7 @@ import { CalendarDays, CheckCircle2, ArrowLeft } from 'lucide-react';
 type PublicService={id:string;name:string;duration:number;price:number};
 type PublicHour={weekday:number;enabled:boolean;opens_at:string;closes_at:string};
 type BusySlot={starts_at:string;ends_at:string};
-type PublicBookingData={business:{name:string;phone:string;slug:string;timezone:string};services:PublicService[];hours:PublicHour[];busy:BusySlot[]};
+type PublicBookingData={business:{name:string;phone:string;slug:string;timezone:string;sector:string};services:PublicService[];hours:PublicHour[];busy:BusySlot[]};
 const mins=(t:string)=>{const [h,m]=t.split(':').map(Number);return h*60+m};
 const fmt=(n:number)=>`${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
 
@@ -22,6 +22,7 @@ export default function BookingPage(){
  const [time,setTime]=useState('');
  const [name,setName]=useState('');
  const [phone,setPhone]=useState('');
+ const [rut,setRut]=useState('');
  const [notes,setNotes]=useState('');
  const [error,setError]=useState('');
  const [done,setDone]=useState(false);
@@ -62,7 +63,7 @@ export default function BookingPage(){
  },[service,hours,publicData,date]);
 
  const submit=async()=>{
-  if(!service||!time||!name.trim()||!phone.trim()){setError('Completa tus datos y selecciona una hora disponible.');return}
+  if(!service||!time||!name.trim()||!phone.trim()||(publicData?.business.sector==='health'&&!rut.trim())){setError('Completa tus datos y selecciona una hora disponible.');return}
   setError('');setSubmitting(true);
   try{
    const startsAt=new Date(`${date}T${time}:00`).toISOString();
@@ -73,6 +74,7 @@ export default function BookingPage(){
     p_starts_at:startsAt,
     p_full_name:name.trim(),
     p_phone:phone.trim(),
+    p_rut:publicData.business.sector==='health'?rut.trim():null,
     p_notes:notes.trim()||null
    });
    if(bookingError){
@@ -99,7 +101,7 @@ export default function BookingPage(){
     <label className="block text-[11px] font-semibold text-[#6d6b62]">1. Elige un servicio<select className="field mt-1.5" value={serviceId} onChange={e=>{setServiceId(e.target.value);setTime('')}}><option value="">Seleccionar servicio</option>{publicData.services.map(s=><option key={s.id} value={s.id}>{s.name} · {s.duration} min · {money(s.price)}</option>)}</select></label>{publicData.services.length===0&&<p role="alert" className="rounded-xl bg-[#f8eae7] p-3 text-[11px] text-[#9c5147]">Este negocio todavía no tiene servicios activos. Debe agregar uno desde Servicios.</p>}
     <label className="block text-[11px] font-semibold text-[#6d6b62]">2. Selecciona una fecha<input type="date" min={localDate(new Date())} className="field mt-1.5" value={date} onChange={e=>{setDate(e.target.value);setTime('')}}/></label>
     <div><div className="mb-2 text-[11px] font-semibold text-[#6d6b62]">3. Horarios disponibles</div>{!publicData.hours.length?<p className="rounded-xl bg-[#f8eae7] p-3 text-[11px] text-[#9c5147]">Este negocio todavía no configuró sus horarios de atención.</p>:!service?<p className="rounded-xl bg-[#DCEBE6] p-3 text-[11px] text-[#99968d]">Primero selecciona un servicio.</p>:!hours?.enabled?<p className="rounded-xl bg-[#DCEBE6] p-3 text-[11px] text-[#99968d]">El negocio no atiende ese día. Prueba otra fecha.</p>:slots.length?<div className="grid grid-cols-3 gap-2 sm:grid-cols-4">{slots.map(s=><button key={s} onClick={()=>setTime(s)} className={`rounded-xl border px-2 py-3 text-[12px] font-semibold transition ${time===s?'border-[#172B3A] bg-[#172B3A] text-white':'border-[#E2E9E5] bg-white text-[#55564e] hover:border-[#397D78]'}`}>{s}</button>)}</div>:<p className="rounded-xl bg-[#DCEBE6] p-3 text-[11px] text-[#99968d]">No quedan horas disponibles para esta fecha.</p>}</div>
-    <div className="border-t border-[#E2E9E5] pt-5"><div className="mb-3 text-[11px] font-semibold text-[#6d6b62]">4. Tus datos</div><div className="space-y-3"><input className="field" value={name} onChange={e=>setName(e.target.value)} placeholder="Nombre y apellido"/><input type="tel" inputMode="tel" autoComplete="tel" className="field" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+56912345678" aria-label="Teléfono con código de país"/><p className="text-[10px] leading-5 text-[#718087]">Ingresa tu número con código de país. Ejemplo Chile: +56912345678.</p><textarea className="field" rows={2} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Notas (opcional)"/></div></div>
+    <div className="border-t border-[#E2E9E5] pt-5"><div className="mb-3 text-[11px] font-semibold text-[#6d6b62]">4. Tus datos</div><div className="space-y-3"><input className="field" value={name} onChange={e=>setName(e.target.value)} placeholder="Nombre y apellido"/><input type="tel" inputMode="tel" autoComplete="tel" className="field" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="+56912345678" aria-label="Teléfono con código de país"/><p className="text-[10px] leading-5 text-[#718087]">Ingresa tu número con código de país. Ejemplo Chile: +56912345678.</p>{publicData.business.sector==='health'&&<label className="block text-[11px] font-semibold text-[#6d6b62]">RUT<input className="field mt-1.5" value={rut} onChange={e=>setRut(e.target.value)} placeholder="12.345.678-9" autoComplete="off" required/></label>}<textarea className="field" rows={2} value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Notas (opcional)"/></div></div>
     {error&&<p className="text-[11px] text-[#a45f52]">{error}</p>}
     <button disabled={submitting} onClick={submit} className="btn-primary w-full py-3.5 disabled:opacity-60">{submitting?'Guardando...':'Solicitar hora'} <ArrowLeft className="rotate-180" size={14}/></button>
     <button onClick={()=>void loadAvailability()} className="w-full text-center text-[10px] text-[#718087] underline">Actualizar horarios disponibles</button>
