@@ -15,6 +15,7 @@ export default function CustomersPage() {
         map.set(key, {
           name: appointment.customer,
           phone: appointment.phone,
+          rut: appointment.customerRut||'',
           count: 1,
           lastDate: appointment.date,
           appointments: [appointment],
@@ -25,10 +26,11 @@ export default function CustomersPage() {
         if (appointment.date > previous.lastDate) {
           previous.lastDate = appointment.date;
           previous.name = appointment.customer;
+          if(appointment.customerRut)previous.rut=appointment.customerRut;
         }
       }
       return map;
-    }, new Map<string, { name: string; phone: string; count: number; lastDate: string; appointments: typeof data.appointments }>())
+    }, new Map<string, { name: string; phone: string; rut:string; count: number; lastDate: string; appointments: typeof data.appointments }>())
       .values(),
   ).sort((a, b) => b.lastDate.localeCompare(a.lastDate));
 
@@ -86,7 +88,7 @@ export default function CustomersPage() {
             <div key={customer.phone} className="grid min-w-0 gap-3 border-b border-[#E2E9E5] px-3 py-4 last:border-0 sm:grid-cols-[1fr_auto] sm:items-center sm:px-5 sm:py-5">
               <div>
                 <div className="text-[13px] font-semibold">{customer.name}</div>
-                <div className="mt-1 text-[10px] text-[#718087]">{customer.phone} · {customer.count} {customer.count === 1 ? 'reserva' : 'reservas'} · Última visita: {customer.lastDate}</div>
+                <div className="mt-1 text-[10px] text-[#718087]">{customer.phone}{data.sector==='health'&&customer.rut?` · RUT: ${customer.rut}`:''} · {customer.count} {customer.count === 1 ? 'reserva' : 'reservas'} · Última visita: {customer.lastDate}</div>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {customer.appointments
                     .sort((a, b) => `${b.date}T${b.time}`.localeCompare(`${a.date}T${a.time}`))
