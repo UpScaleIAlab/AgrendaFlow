@@ -9,13 +9,13 @@ const Ctx = createContext<ContextValue | null>(null);
 
 type ServiceRow={id:string;name:string;duration_minutes:number;price_clp:number;active:boolean};
 type HoursRow={weekday:number;enabled:boolean;opens_at:string;closes_at:string};
-type AppointmentRow={id:string;starts_at:string;service_id:string|null;notes:string|null;status:Appointment['status'];customers:{full_name:string;phone:string}|null};
+type AppointmentRow={id:string;starts_at:string;service_id:string|null;notes:string|null;status:Appointment['status'];customers:{full_name:string;phone:string;rut:string|null}|null};
 type BlockedRow={id:string;starts_at:string;ends_at:string;reason:string};
 const dayNames=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 const toIso=(date:string,time:string)=>new Date(`${date}T${time}:00`).toISOString();
 const fromIso=(value:string)=>{const d=new Date(value);return {date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,time:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}};
 export function AgendaProvider({children}:{children:React.ReactNode}) {
- const [data,setData]=useState<AgendaData>({businessName:'Mi negocio',slug:'',phone:'',services:[],hours:[],appointments:[],blocked:[]});
+ const [data,setData]=useState<AgendaData>({businessName:'Mi negocio',slug:'',phone:'',sector:'independent',services:[],hours:[],appointments:[],blocked:[]});
  const [ready,setReady]=useState(false);
  const [loadError,setLoadError]=useState<string|null>(null);
  const [businessId,setBusinessId]=useState<string|null>(null);
@@ -28,7 +28,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     const supabase=createClient();
     const {data:{user}}=await supabase.auth.getUser();
     if(!user){if(active){setBusinessId(null);setData({businessName:'Mi negocio',slug:'',phone:'',services:[],hours:[],appointments:[],blocked:[]});setLoadError(null);setReady(true)}return}
-    const {data:foundBusiness,error:businessError}=await supabase.from('businesses').select('id,name,slug,phone').eq('owner_id',user.id).maybeSingle();
+    const {data:foundBusiness,error:businessError}=await supabase.from('businesses').select('id,name,slug,phone,sector').eq('owner_id',user.id).maybeSingle();
     let business=foundBusiness;
     if(businessError)throw new Error(`No se pudo consultar el negocio (${businessError.code||'Supabase'}): ${businessError.message}`);
     if(!business){
@@ -37,7 +37,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
       const slugBase=businessName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'negocio';
       const businessPayload={owner_id:user.id,name:businessName,slug:slugBase,
         sector,trial_started_at:new Date().toISOString(),trial_ends_at:new Date(Date.now()+15*24*60*60*1000).toISOString()};
-      let creation=await supabase.from('businesses').upsert(businessPayload,{onConflict:'owner_id'}).select('id,name,slug,phone').single();
+      let creation=await supabase.from('businesses').upsert(businessPayload,{onConflict:'owner_id'}).select('id,name,slug,phone,sector').single();
       // Si el nombre ya está ocupado, agregamos un sufijo corto para conservar unicidad.
       if(creation.error?.code==='23505'){
         creation=await supabase.from('businesses').upsert({...businessPayload,slug:`${slugBase}-${user.id.replace(/-/g,'').slice(0,4)}`},{onConflict:'owner_id'}).select('id,name,slug,phone').single();
@@ -56,16 +56,16 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
       const q=await supabase.from('working_hours').select('*').eq('business_id',business.id).order('weekday');if(q.error)throw new Error(`No se pudieron recuperar los horarios (${q.error.code||'Supabase'}): ${q.error.message}`);hourRows=q.data
     }
     const [{data:appointmentRows,error:appointmentsError},{data:blockedRows,error:blockedError}]=await Promise.all([
-      supabase.from('appointments').select('*,customers(full_name,phone)').eq('business_id',business.id).order('starts_at'),
+      supabase.from('appointments').select('*,customers(full_name,phone,rut)').eq('business_id',business.id).order('starts_at'),
       supabase.from('blocked_times').select('*').eq('business_id',business.id).order('starts_at')
     ]);
     if(appointmentsError)throw new Error(`Error al cargar reservas (${appointmentsError.code||'Supabase'}): ${appointmentsError.message}`);if(blockedError)throw new Error(`Error al cargar bloqueos (${blockedError.code||'Supabase'}): ${blockedError.message}`);
     const services:Service[]=((serviceRows||[]) as ServiceRow[]).map((s:ServiceRow)=>({id:s.id,name:s.name,duration:s.duration_minutes,price:s.price_clp,active:s.active}));
     const hours:WorkingDay[]=((hourRows||[]) as HoursRow[]).map((h:HoursRow)=>({day:['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][h.weekday],enabled:h.enabled,open:String(h.opens_at).slice(0,5),close:String(h.closes_at).slice(0,5)}));
-    const appointments:Appointment[]=((appointmentRows||[]) as AppointmentRow[]).map((a:AppointmentRow)=>{const slot=fromIso(a.starts_at);return{id:a.id,date:slot.date,time:slot.time,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
+    const appointments:Appointment[]=((appointmentRows||[]) as AppointmentRow[]).map((a:AppointmentRow)=>{const slot=fromIso(a.starts_at);return{id:a.id,date:slot.date,time:slot.time,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',customerRut:a.customers?.rut||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
     const blocked:BlockedTime[]=((blockedRows||[]) as BlockedRow[]).map((b:BlockedRow)=>{const start=fromIso(b.starts_at),end=fromIso(b.ends_at);return{id:b.id,date:start.date,start:start.time,end:end.time,reason:b.reason}});
     if(active){
-      setData({businessName:business.name,slug:business.slug,phone:business.phone||'',services,hours,appointments,blocked});
+      setData({businessName:business.name,slug:business.slug,phone:business.phone||'',sector:business.sector||'independent',services,hours,appointments,blocked});
       setReady(true);
     }
    }catch(error){console.error('AgendaFlow: no se pudo cargar la agenda desde Supabase',error);if(active){setLoadError(error instanceof Error?error.message:'Error desconocido al cargar datos.');setData(d=>({...d}));setReady(true)}}
@@ -126,14 +126,14 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
    if(blocked)return {ok:false,message:`Ese horario está bloqueado${blocked.reason?.trim()?` por: ${blocked.reason.trim()}`:'.'}`};
    if(!businessId)return {ok:false,message:'La agenda todavía se está cargando. Intenta nuevamente.'};
    const supabase=createClient();
-   const {data:customer,error:customerError}=await supabase.from('customers').upsert({business_id:businessId,full_name:a.customer.trim(),phone:a.phone.trim()},{onConflict:'business_id,phone'}).select('id').single();
+   const {data:customer,error:customerError}=await supabase.from('customers').upsert({business_id:businessId,full_name:a.customer.trim(),phone:a.phone.trim(),...(a.customerRut?.trim()?{rut:a.customerRut.trim()}: {})},{onConflict:'business_id,phone'}).select('id').single();
    if(customerError||!customer)return {ok:false,message:customerError?.message||'No se pudo guardar el cliente.'};
    const startsAt=new Date(`${a.date}T${a.time}:00`).toISOString();
    const endsAt=new Date(new Date(startsAt).getTime()+service.duration*60000).toISOString();
-   const {data:created,error}=await supabase.from('appointments').insert({business_id:businessId,customer_id:customer.id,service_id:a.serviceId,starts_at:startsAt,ends_at:endsAt,status:a.status,notes:a.notes||null}).select('*,customers(full_name,phone)').single();
+   const {data:created,error}=await supabase.from('appointments').insert({business_id:businessId,customer_id:customer.id,service_id:a.serviceId,starts_at:startsAt,ends_at:endsAt,status:a.status,notes:a.notes||null}).select('*,customers(full_name,phone,rut)').single();
    if(error)return {ok:false,message:error.message.includes('Horario ocupado')?'Ese horario acaba de ser reservado. Elige otro.':error.message};
    const d=fromIso(created.starts_at);
-   setData(prev=>({...prev,appointments:[...prev.appointments,{...a,id:created.id,date:d.date,time:d.time,customer:created.customers?.full_name||a.customer,phone:created.customers?.phone||a.phone}]}));
+   setData(prev=>({...prev,appointments:[...prev.appointments,{...a,id:created.id,date:d.date,time:d.time,customer:created.customers?.full_name||a.customer,phone:created.customers?.phone||a.phone,customerRut:created.customers?.rut||a.customerRut||''}]}));
    return {ok:true};
   },
   updateAppointment:async(id,patch)=>{
@@ -159,7 +159,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
    }
    if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
    const supabase=createClient();
-   const {data:customer,error:customerError}=await supabase.from('customers').upsert({business_id:businessId,full_name:next.customer.trim(),phone:next.phone.trim()},{onConflict:'business_id,phone'}).select('id').single();
+   const {data:customer,error:customerError}=await supabase.from('customers').upsert({business_id:businessId,full_name:next.customer.trim(),phone:next.phone.trim(),...(next.customerRut?.trim()?{rut:next.customerRut.trim()}: {})},{onConflict:'business_id,phone'}).select('id').single();
    if(customerError||!customer)return {ok:false,message:customerError?.message||'No se pudo guardar el cliente.'};
    const service=data.services.find(s=>s.id===next.serviceId);
    const startsAt=new Date(`${next.date}T${next.time}:00`).toISOString();
