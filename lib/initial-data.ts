@@ -2,7 +2,7 @@ import type { AgendaData } from './types';
 const today = new Date();
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 export const initialData: AgendaData = {
-  businessName: 'Estudio Central', slug: 'estudio-central', phone: '56912345678',
+  businessName: 'Estudio Central', slug: 'estudio-central', phone: '56912345678', sector: 'barber_beauty',
   services: [
     { id: 's1', name: 'Corte clásico', duration: 30, price: 12000, active: true },
     { id: 's2', name: 'Corte + barba', duration: 45, price: 18000, active: true },
