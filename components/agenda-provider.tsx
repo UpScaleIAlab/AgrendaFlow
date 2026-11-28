@@ -124,7 +124,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     return start<xs+xd*60000&&end>xs;
    });
    if(overlaps)return {ok:false,message:'Ya existe una reserva que ocupa ese horario. Elige otra hora.'};
-   const weekday=new Date(`${a.date}T12:00:00`).getDay();const blocked=data.blocked.find(b=>(b.recurring?b.weekdays?.includes(weekday):b.date===a.date)&&a.time<b.end&&new Date(`${a.date}T${a.time}:00`).getTime()+service.duration*60000>new Date(`${a.date}T${b.start}:00`).getTime());
+   const blockedWeekday=new Date(`${a.date}T12:00:00`).getDay();const blocked=data.blocked.find(b=>(b.recurring?b.weekdays?.some(day=>Number(day)===blockedWeekday):b.date===a.date)&&a.time<b.end&&new Date(`${a.date}T${a.time}:00`).getTime()+service.duration*60000>new Date(`${a.date}T${b.start}:00`).getTime());
    if(blocked)return {ok:false,message:`Ese horario está bloqueado${blocked.reason?.trim()?` por: ${blocked.reason.trim()}`:'.'}`};
    if(!businessId)return {ok:false,message:'La agenda todavía se está cargando. Intenta nuevamente.'};
    const supabase=createClient();
@@ -150,7 +150,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     const weekday=dayNames[new Date(`${next.date}T12:00:00`).getDay()],day=data.hours.find(h=>h.day.toLowerCase()===weekday);
     const endTime=new Date(end).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});
     if(!day?.enabled||next.time<day.open||endTime>day.close)return {ok:false,message:'La reserva queda fuera del horario de atención.'};
-    const weekday=new Date(`${next.date}T12:00:00`).getDay();const blocked=data.blocked.find(b=>(b.recurring?b.weekdays?.includes(weekday):b.date===next.date)&&next.time<b.end&&end>new Date(`${next.date}T${b.start}:00`).getTime());
+    const blockedWeekday=new Date(`${next.date}T12:00:00`).getDay();const blocked=data.blocked.find(b=>(b.recurring?b.weekdays?.some(day=>Number(day)===blockedWeekday):b.date===next.date)&&next.time<b.end&&end>new Date(`${next.date}T${b.start}:00`).getTime());
     if(blocked)return {ok:false,message:`Ese horario está bloqueado${blocked.reason?.trim()?` por: ${blocked.reason.trim()}`:'.'}`};
     const conflict=data.appointments.some(x=>{
      if(x.id===id||x.status==='cancelled')return false;
