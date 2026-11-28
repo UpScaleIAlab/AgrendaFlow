@@ -5,7 +5,6 @@ import { useAgenda } from '@/components/agenda-provider';
 import { CalendarClock, Plus, Trash2, X, Ban } from 'lucide-react';
 
 const weekDays=[{label:'Lunes',value:1},{label:'Martes',value:2},{label:'Miércoles',value:3},{label:'Jueves',value:4},{label:'Viernes',value:5},{label:'Sábado',value:6},{label:'Domingo',value:0}];
-const dayNames=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 
 export default function HoursPage(){
  const {data,saveHours,addBlocked,addWeeklyBlocked,removeBlocked,updateBusiness}=useAgenda();
