@@ -4,13 +4,14 @@ import { initialData } from '@/lib/initial-data';
 import { createClient } from '@/lib/supabase/client';
 import type { AgendaData, Appointment, Service, WorkingDay, BlockedTime } from '@/lib/types';
 
-type ContextValue = { data: AgendaData; ready: boolean; loadError:string|null; addAppointment:(a:Omit<Appointment,'id'>)=>Promise<{ok:boolean;message?:string}>; updateAppointment:(id:string, patch:Partial<Appointment>)=>Promise<{ok:boolean;message?:string}>; deleteAppointment:(id:string)=>Promise<{ok:boolean;message?:string}>; saveService:(s:Service)=>Promise<{ok:boolean;message?:string}>; deleteService:(id:string)=>Promise<{ok:boolean;message?:string}>; saveHours:(h:WorkingDay[])=>Promise<{ok:boolean;message?:string}>; addBlocked:(b:Omit<BlockedTime,'id'>)=>Promise<{ok:boolean;message?:string}>; removeBlocked:(id:string)=>Promise<{ok:boolean;message?:string}>; updateBusiness:(patch:Partial<Pick<AgendaData,'businessName'|'phone'|'slug'>>)=>Promise<{ok:boolean;message?:string}> };
+type ContextValue = { data: AgendaData; ready: boolean; loadError:string|null; addAppointment:(a:Omit<Appointment,'id'>)=>Promise<{ok:boolean;message?:string}>; addWeeklyBlocked:(b:{weekdays:number[];start:string;end:string;reason:string})=>Promise<{ok:boolean;message?:string}>; updateAppointment:(id:string, patch:Partial<Appointment>)=>Promise<{ok:boolean;message?:string}>; deleteAppointment:(id:string)=>Promise<{ok:boolean;message?:string}>; saveService:(s:Service)=>Promise<{ok:boolean;message?:string}>; deleteService:(id:string)=>Promise<{ok:boolean;message?:string}>; saveHours:(h:WorkingDay[])=>Promise<{ok:boolean;message?:string}>; addBlocked:(b:Omit<BlockedTime,'id'>)=>Promise<{ok:boolean;message?:string}>; removeBlocked:(id:string)=>Promise<{ok:boolean;message?:string}>; updateBusiness:(patch:Partial<Pick<AgendaData,'businessName'|'phone'|'slug'>>)=>Promise<{ok:boolean;message?:string}> };
 const Ctx = createContext<ContextValue | null>(null);
 
 type ServiceRow={id:string;name:string;duration_minutes:number;price_clp:number;active:boolean};
 type HoursRow={weekday:number;enabled:boolean;opens_at:string;closes_at:string};
 type AppointmentRow={id:string;starts_at:string;service_id:string|null;notes:string|null;status:Appointment['status'];customers:{full_name:string;phone:string;rut:string|null}|null};
 type BlockedRow={id:string;starts_at:string;ends_at:string;reason:string};
+type WeeklyBlockedRow={id:string;weekdays:number[];starts_at:string;ends_at:string;reason:string};
 const dayNames=['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
 const toIso=(date:string,time:string)=>new Date(`${date}T${time}:00`).toISOString();
 const fromIso=(value:string)=>{const d=new Date(value);return {date:`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,time:`${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}};
@@ -55,15 +56,16 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
       const inserted=await supabase.from('working_hours').upsert(seed,{onConflict:'business_id,weekday'});if(inserted.error)throw new Error(`No se pudieron inicializar los horarios (${inserted.error.code||'Supabase'}): ${inserted.error.message}`);
       const q=await supabase.from('working_hours').select('*').eq('business_id',business.id).order('weekday');if(q.error)throw new Error(`No se pudieron recuperar los horarios (${q.error.code||'Supabase'}): ${q.error.message}`);hourRows=q.data
     }
-    const [{data:appointmentRows,error:appointmentsError},{data:blockedRows,error:blockedError}]=await Promise.all([
+    const [{data:appointmentRows,error:appointmentsError},{data:blockedRows,error:blockedError},{data:weeklyRows,error:weeklyError}]=await Promise.all([
       supabase.from('appointments').select('*,customers(full_name,phone,rut)').eq('business_id',business.id).order('starts_at'),
-      supabase.from('blocked_times').select('*').eq('business_id',business.id).order('starts_at')
+      supabase.from('blocked_times').select('*').eq('business_id',business.id).order('starts_at'),
+      supabase.from('weekly_blocked_times').select('*').eq('business_id',business.id)
     ]);
-    if(appointmentsError)throw new Error(`Error al cargar reservas (${appointmentsError.code||'Supabase'}): ${appointmentsError.message}`);if(blockedError)throw new Error(`Error al cargar bloqueos (${blockedError.code||'Supabase'}): ${blockedError.message}`);
+    if(appointmentsError)throw new Error(`Error al cargar reservas (${appointmentsError.code||'Supabase'}): ${appointmentsError.message}`);if(blockedError)throw new Error(`Error al cargar bloqueos (${blockedError.code||'Supabase'}): ${blockedError.message}`);if(weeklyError)throw new Error(`Error al cargar bloqueos semanales (${weeklyError.code||'Supabase'}): ${weeklyError.message}`);
     const services:Service[]=((serviceRows||[]) as ServiceRow[]).map((s:ServiceRow)=>({id:s.id,name:s.name,duration:s.duration_minutes,price:s.price_clp,active:s.active}));
     const hours:WorkingDay[]=((hourRows||[]) as HoursRow[]).map((h:HoursRow)=>({day:['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][h.weekday],enabled:h.enabled,open:String(h.opens_at).slice(0,5),close:String(h.closes_at).slice(0,5)}));
     const appointments:Appointment[]=((appointmentRows||[]) as AppointmentRow[]).map((a:AppointmentRow)=>{const slot=fromIso(a.starts_at);return{id:a.id,date:slot.date,time:slot.time,customer:a.customers?.full_name||'Cliente',phone:a.customers?.phone||'',customerRut:a.customers?.rut||'',serviceId:a.service_id||'',notes:a.notes||'',status:a.status}});
-    const blocked:BlockedTime[]=((blockedRows||[]) as BlockedRow[]).map((b:BlockedRow)=>{const start=fromIso(b.starts_at),end=fromIso(b.ends_at);return{id:b.id,date:start.date,start:start.time,end:end.time,reason:b.reason}});
+    const blocked:BlockedTime[]=((blockedRows||[]) as BlockedRow[]).map((b:BlockedRow)=>{const start=fromIso(b.starts_at),end=fromIso(b.ends_at);return{id:b.id,date:start.date,start:start.time,end:end.time,reason:b.reason}}).concat(((weeklyRows||[]) as WeeklyBlockedRow[]).map((b:WeeklyBlockedRow)=>({id:`weekly-${b.id}`,date:'',start:String(b.starts_at).slice(0,5),end:String(b.ends_at).slice(0,5),reason:b.reason,weekdays:b.weekdays,recurring:true})));
     if(active){
       setData({businessName:business.name,slug:business.slug,phone:business.phone||'',sector:business.sector||'independent',services,hours,appointments,blocked});
       setReady(true);
@@ -122,7 +124,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     return start<xs+xd*60000&&end>xs;
    });
    if(overlaps)return {ok:false,message:'Ya existe una reserva que ocupa ese horario. Elige otra hora.'};
-   const blocked=data.blocked.find(b=>b.date===a.date&&a.time<b.end&&new Date(`${a.date}T${a.time}:00`).getTime()+service.duration*60000>new Date(`${b.date}T${b.start}:00`).getTime());
+   const weekday=new Date(`${a.date}T12:00:00`).getDay();const blocked=data.blocked.find(b=>(b.recurring?b.weekdays?.includes(weekday):b.date===a.date)&&a.time<b.end&&new Date(`${a.date}T${a.time}:00`).getTime()+service.duration*60000>new Date(`${a.date}T${b.start}:00`).getTime());
    if(blocked)return {ok:false,message:`Ese horario está bloqueado${blocked.reason?.trim()?` por: ${blocked.reason.trim()}`:'.'}`};
    if(!businessId)return {ok:false,message:'La agenda todavía se está cargando. Intenta nuevamente.'};
    const supabase=createClient();
@@ -148,7 +150,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
     const weekday=dayNames[new Date(`${next.date}T12:00:00`).getDay()],day=data.hours.find(h=>h.day.toLowerCase()===weekday);
     const endTime=new Date(end).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});
     if(!day?.enabled||next.time<day.open||endTime>day.close)return {ok:false,message:'La reserva queda fuera del horario de atención.'};
-    const blocked=data.blocked.find(b=>b.date===next.date&&next.time<b.end&&end>new Date(`${b.date}T${b.start}:00`).getTime());
+    const weekday=new Date(`${next.date}T12:00:00`).getDay();const blocked=data.blocked.find(b=>(b.recurring?b.weekdays?.includes(weekday):b.date===next.date)&&next.time<b.end&&end>new Date(`${next.date}T${b.start}:00`).getTime());
     if(blocked)return {ok:false,message:`Ese horario está bloqueado${blocked.reason?.trim()?` por: ${blocked.reason.trim()}`:'.'}`};
     const conflict=data.appointments.some(x=>{
      if(x.id===id||x.status==='cancelled')return false;
@@ -207,6 +209,16 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
    setData(d=>({...d,hours:h}));
    return {ok:true};
   },
+  addWeeklyBlocked:async(b)=>{
+   if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
+   if(!b.weekdays.length||b.weekdays.some(d=>!Number.isInteger(d)||d<0||d>6)||b.start>=b.end)return {ok:false,message:'Selecciona al menos un día y revisa el rango del bloqueo.'};
+   const overlaps=data.appointments.some(a=>a.status!=='cancelled'&&b.weekdays.includes(new Date(`${a.date}T12:00:00`).getDay())&&(()=>{const as=new Date(`${a.date}T${a.time}:00`).getTime(),duration=data.services.find(s=>s.id===a.serviceId)?.duration||30;return new Date(`${a.date}T${b.start}:00`).getTime()<as+duration*60000&&new Date(`${a.date}T${b.end}:00`).getTime()>as})());
+   if(overlaps)return {ok:false,message:'El bloqueo semanal coincide con una reserva existente. Revisa los días seleccionados.'};
+   const {data:row,error}=await createClient().from('weekly_blocked_times').insert({business_id:businessId,weekdays:b.weekdays,starts_at:b.start,ends_at:b.end,reason:b.reason}).select('*').single();
+   if(error||!row)return {ok:false,message:error?.message||'No se pudo guardar el bloqueo semanal.'};
+   setData(d=>({...d,blocked:[...d.blocked,{id:`weekly-${row.id}`,date:'',start:String(row.starts_at).slice(0,5),end:String(row.ends_at).slice(0,5),reason:row.reason,weekdays:row.weekdays,recurring:true}]}));
+   return {ok:true};
+  },
   addBlocked:async(b)=>{
    if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
    if(!b.date||b.start>=b.end)return {ok:false,message:'Revisa la fecha y el rango del bloqueo.'};
@@ -223,7 +235,7 @@ export function AgendaProvider({children}:{children:React.ReactNode}) {
   },
   removeBlocked:async(id)=>{
    if(!businessId)return {ok:false,message:'La agenda todavía se está cargando.'};
-   const {error}=await createClient().from('blocked_times').delete().eq('id',id).eq('business_id',businessId);
+   const weekly=id.startsWith('weekly-');const targetId=weekly?id.slice(7):id;const {error}=await createClient().from(weekly?'weekly_blocked_times':'blocked_times').delete().eq('id',targetId).eq('business_id',businessId);
    if(error)return {ok:false,message:error.message};
    setData(d=>({...d,blocked:d.blocked.filter(b=>b.id!==id)}));
    return {ok:true};
