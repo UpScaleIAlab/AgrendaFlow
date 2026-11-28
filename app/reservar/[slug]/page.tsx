@@ -9,7 +9,8 @@ import { CalendarDays, CheckCircle2, ArrowLeft } from 'lucide-react';
 type PublicService={id:string;name:string;duration:number;price:number};
 type PublicHour={weekday:number;enabled:boolean;opens_at:string;closes_at:string};
 type BusySlot={starts_at:string;ends_at:string};
-type PublicBookingData={business:{name:string;phone:string;slug:string;timezone:string;sector:string};services:PublicService[];hours:PublicHour[];busy:BusySlot[]};
+type WeeklyBusySlot={weekdays:number[];starts_at:string;ends_at:string;reason:string};
+type PublicBookingData={business:{name:string;phone:string;slug:string;timezone:string;sector:string};services:PublicService[];hours:PublicHour[];busy:BusySlot[];weekly_busy?:WeeklyBusySlot[]};
 const mins=(t:string)=>{const [h,m]=t.split(':').map(Number);return h*60+m};
 const fmt=(n:number)=>`${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
 
@@ -55,7 +56,7 @@ export default function BookingPage(){
   for(let t=open;t+service.duration<=close;t+=30){
    const startDate=new Date(`${date}T${fmt(t)}:00`);
    const endDate=new Date(startDate.getTime()+service.duration*60000);
-   const busy=publicData.busy.some(b=>startDate<new Date(b.ends_at)&&endDate>new Date(b.starts_at));
+   const busy=publicData.busy.some(b=>startDate<new Date(b.ends_at)&&endDate>new Date(b.starts_at))||((publicData.weekly_busy||[]).some(b=>b.weekdays.includes(startDate.getDay())&&t<b.ends_at.slice(0,5).split(':').map(Number).reduce((h,m)=>h*60+m,0)&&t+service.duration>b.starts_at.slice(0,5).split(':').map(Number).reduce((h,m)=>h*60+m,0)));
    const past=startDate<=new Date();
    if(!busy&&!past)out.push(fmt(t));
   }
